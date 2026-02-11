@@ -1,24 +1,24 @@
-"use client";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { DashboardShell } from "@/common/components/layout/DashboardShell";
 
-import { SidebarProvider, SidebarInset } from "@/common/components/ui/sidebar";
-import { AppSidebar } from "@/common/components/layout/Sidebar";
-import { Header } from "@/common/components/layout/Header";
-import { ThemeProvider } from "@/common/contexts/ThemeContext";
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect("/login");
+  }
+
   return (
-    <ThemeProvider>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <Header />
-          <main className="flex-1 p-4 md:p-6">{children}</main>
-        </SidebarInset>
-      </SidebarProvider>
-    </ThemeProvider>
+    <DashboardShell
+      userName={session.user.name ?? "Usuário"}
+      userEmail={session.user.email ?? ""}
+    >
+      {children}
+    </DashboardShell>
   );
 }
