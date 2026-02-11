@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 💰 FinTrack - Dashboard Financeiro Pessoal
 
-## Getting Started
+Dashboard financeiro pessoal com gráficos interativos, categorias inteligentes e metas financeiras. Controle suas receitas, despesas e acompanhe seus objetivos em tempo real.
 
-First, run the development server:
+## 🚀 Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS
+- **Backend:** Next.js API Routes
+- **Banco de Dados:** PostgreSQL com Prisma ORM v7
+- **Autenticação:** NextAuth.js v5
+- **Gráficos:** Chart.js + react-chartjs-2
+- **Validação:** Zod
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── app/          # Next.js App Router (páginas e API routes)
+├── modules/      # Feature modules (auth, dashboard, transactions, etc.)
+├── common/       # Componentes, hooks e contexts compartilhados
+├── lib/          # Configurações (Prisma, Auth, utils)
+├── types/        # Tipos TypeScript globais
+└── generated/    # Prisma Client gerado
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚡ Como Rodar
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# 1. Clone o repositório
+git clone https://github.com/seu-usuario/fintrack.git
+cd fintrack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# 2. Instale as dependências
+npm install
 
-## Learn More
+# 3. Configure as variáveis de ambiente
+cp .env.example .env
+# Edite o .env com sua DATABASE_URL e NEXTAUTH_SECRET
 
-To learn more about Next.js, take a look at the following resources:
+# 4. Gere o Prisma Client
+npx prisma generate
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 5. Rode as migrations
+npx prisma migrate dev
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# 6. (Opcional) Popule com dados demo
+npx prisma db seed
 
-## Deploy on Vercel
+# 7. Inicie o servidor
+npm run dev
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔑 Credenciais Demo
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+Email: demo@fintrack.com
+Senha: demo123
+```
+
+## 📦 Scripts
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Build para produção |
+| `npm start` | Servidor de produção |
+| `npx prisma studio` | Interface visual do banco |
+| `npx prisma migrate dev` | Executar migrations |
+| `npx prisma db seed` | Popular banco com dados demo |
+
+## 🗂️ Funcionalidades
+
+- [x] Setup do projeto e estrutura modular
+- [ ] Layout base (sidebar, header, tema dark/light)
+- [ ] Autenticação (login/registro com NextAuth)
+- [ ] CRUD de transações
+- [ ] Dashboard com gráficos interativos
+- [ ] Categorias, filtros e metas financeiras
+- [ ] Responsividade e polimento final
+
+## 📄 Licença
+
+MIT
