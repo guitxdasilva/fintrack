@@ -12,54 +12,55 @@ import {
 import {
   Sidebar as ShadcnSidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from "@/common/components/ui/sidebar";
 
 const navItems = [
   {
     title: "Dashboard",
-    href: "/dashboard",
+    url: "/dashboard",
     icon: LayoutDashboard,
   },
   {
     title: "Transações",
-    href: "/transactions",
+    url: "/transactions",
     icon: ArrowLeftRight,
   },
   {
     title: "Categorias",
-    href: "/categories",
+    url: "/categories",
     icon: Tag,
   },
   {
     title: "Metas",
-    href: "/goals",
+    url: "/goals",
     icon: Target,
   },
 ];
 
-export function AppSidebar() {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof ShadcnSidebar>) {
   const pathname = usePathname();
 
   return (
-    <ShadcnSidebar collapsible="icon" variant="sidebar">
+    <ShadcnSidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex items-center justify-center rounded-lg bg-primary text-primary-foreground aspect-square size-8">
+                <div className="flex items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground aspect-square size-8 shadow-sm">
                   <TrendingUp className="size-4" />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">FinTrack</span>
+                  <span className="font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    FinTrack
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     Dashboard Financeiro
                   </span>
@@ -73,36 +74,25 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.title}
-                  >
-                    <Link href={item.href}>
+          <SidebarMenu>
+            {navItems.map((item) => {
+              const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
+              return (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
+              );
+            })}
+          </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="sm" className="text-xs text-muted-foreground">
-              <span>&copy; 2026 FinTrack</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+      <SidebarRail />
     </ShadcnSidebar>
   );
 }

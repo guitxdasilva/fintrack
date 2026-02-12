@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Toaster } from "@/common/components/ui/sonner";
-import { TooltipProvider } from "@/common/components/ui/tooltip";
 import "./globals.css";
+import { Providers } from "./providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -21,12 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
-        <TooltipProvider>
+    <html lang="pt-BR" suppressHydrationWarning className="h-full overflow-y-scroll">
+      <body className={`${inter.variable} font-sans antialiased bg-slate-100 dark:bg-background`}>
+        <Providers>
           {children}
-        </TooltipProvider>
-        <Toaster position="bottom-right" richColors closeButton />
+        </Providers>
       </body>
     </html>
   );

@@ -63,27 +63,31 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Transações</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mt-1">
             Gerencie suas receitas e despesas
           </p>
         </div>
-        <Button onClick={handleNewTransaction}>
+        <Button onClick={handleNewTransaction} size="lg">
           <Plus className="mr-2 h-4 w-4" />
           Nova Transação
         </Button>
       </div>
 
-      <TransactionFilters onFilterChange={handleFilterChange} />
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <TransactionFilters onFilterChange={handleFilterChange} />
+      </div>
 
-      <TransactionList
-        transactions={transactions}
-        loading={loading}
-        onEdit={handleEdit}
-        onDelete={fetchTransactions}
-      />
+      <div className="rounded-lg border bg-card shadow-sm">
+        <TransactionList
+          transactions={transactions}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={fetchTransactions}
+        />
+      </div>
 
       <TransactionForm
         open={formOpen}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -50,9 +50,9 @@ export function TransactionList({
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="p-6 space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-12 w-full" />
+          <Skeleton key={i} className="h-12 w-full rounded-lg" />
         ))}
       </div>
     );
@@ -60,15 +60,18 @@ export function TransactionList({
 
   if (transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <div className="rounded-full bg-muted p-4 mb-4">
+          <ArrowLeftRight className="h-8 w-8" />
+        </div>
         <p className="text-lg font-medium">Nenhuma transação encontrada</p>
-        <p className="text-sm">Crie sua primeira transação clicando no botão acima</p>
+        <p className="text-sm mt-1">Crie sua primeira transação clicando no botão acima</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border">
+    <div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -86,7 +89,7 @@ export function TransactionList({
                 {transaction.description}
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className="gap-1">
+                <Badge variant="secondary" className="gap-1.5 font-normal">
                   {transaction.category?.icon && (
                     <span>{transaction.category.icon}</span>
                   )}
