@@ -5,7 +5,8 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { TrendingUp, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import {
@@ -17,6 +18,32 @@ import {
   CardTitle,
 } from "@/common/components/ui/card";
 
+const registerSchema = z
+  .object({
+    name: z
+      .string()
+      .min(1, "Nome é obrigatório")
+      .min(2, "Nome deve ter pelo menos 2 caracteres"),
+    email: z
+      .string()
+      .min(1, "Email é obrigatório")
+      .email("Email inválido"),
+    password: z
+      .string()
+      .min(1, "Senha é obrigatória")
+      .min(6, "Senha deve ter pelo menos 6 caracteres"),
+    confirmPassword: z
+      .string()
+      .min(1, "Confirmação de senha é obrigatória"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
+
+type FormData = z.infer<typeof registerSchema>;
+type FieldErrors = Partial<Record<keyof FormData, string>>;
+
 export function RegisterForm() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -24,21 +51,23 @@ export function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setFieldErrors({});
 
-    if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
-      toast.error("As senhas não coincidem");
-      return;
-    }
+    const result = registerSchema.safeParse({ name, email, password, confirmPassword });
 
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres");
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof FieldErrors;
+        if (!errors[field]) errors[field] = issue.message;
+      });
+      setFieldErrors(errors);
       return;
     }
 
@@ -47,7 +76,7 @@ export function RegisterForm() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name: result.data.name, email: result.data.email, password: result.data.password }),
     });
 
     const data = await res.json();
@@ -59,15 +88,15 @@ export function RegisterForm() {
       return;
     }
 
-    const result = await signIn("credentials", {
-      email,
-      password,
+    const signInResult = await signIn("credentials", {
+      email: result.data.email,
+      password: result.data.password,
       redirect: false,
     });
 
     setLoading(false);
 
-    if (result?.error) {
+    if (signInResult?.error) {
       setError("Conta criada, mas erro ao fazer login automático");
       toast.error("Erro ao fazer login automático");
       return;
@@ -78,13 +107,9 @@ export function RegisterForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-          <TrendingUp className="size-6 text-primary" />
-          <span className="text-xl font-bold">FinTrack</span>
-        </div>
-        <CardTitle className="text-2xl">Criar Conta</CardTitle>
+    <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
+      <CardHeader className="text-center space-y-1">
+        <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
         <CardDescription>
           Comece a controlar suas finanças
         </CardDescription>
@@ -108,8 +133,11 @@ export function RegisterForm() {
               placeholder="Seu nome"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              required
+              className={fieldErrors.name ? "border-destructive" : ""}
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-destructive">{fieldErrors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -122,8 +150,11 @@ export function RegisterForm() {
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
+              className={fieldErrors.email ? "border-destructive" : ""}
             />
+            {fieldErrors.email && (
+              <p className="text-xs text-destructive">{fieldErrors.email}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -136,8 +167,11 @@ export function RegisterForm() {
               placeholder="Mínimo 6 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
+              className={fieldErrors.password ? "border-destructive" : ""}
             />
+            {fieldErrors.password && (
+              <p className="text-xs text-destructive">{fieldErrors.password}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -150,12 +184,15 @@ export function RegisterForm() {
               placeholder="Repita a senha"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              required
+              className={fieldErrors.confirmPassword ? "border-destructive" : ""}
             />
+            {fieldErrors.confirmPassword && (
+              <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
+            )}
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col gap-4">
+        <CardFooter className="flex flex-col gap-4 pt-4">
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
             Criar Conta

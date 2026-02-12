@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2, ArrowLeftRight } from "lucide-react";
+import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -72,63 +72,131 @@ export function TransactionList({
 
   return (
     <div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Descrição</TableHead>
-            <TableHead>Categoria</TableHead>
-            <TableHead>Data</TableHead>
-            <TableHead className="text-right">Valor</TableHead>
-            <TableHead className="text-right w-[100px]">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.map((transaction) => (
-            <TableRow key={transaction.id}>
-              <TableCell className="font-medium">
+      <div className="hidden md:block">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Data</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right w-[100px]">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.map((transaction) => (
+              <TableRow key={transaction.id}>
+                <TableCell className="font-medium">
+                  {transaction.description}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="gap-1.5 font-normal">
+                    {transaction.category?.icon && (
+                      <span>{transaction.category.icon}</span>
+                    )}
+                    {transaction.category?.name}
+                  </Badge>
+                </TableCell>
+                <TableCell>{formatDate(transaction.date)}</TableCell>
+                <TableCell
+                  className={`text-right font-semibold ${getTransactionColor(
+                    transaction.type
+                  )}`}
+                >
+                  {transaction.type === "EXPENSE" ? "- " : "+ "}
+                  {formatCurrency(transaction.amount)}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEdit(transaction)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:text-red-600"
+                      onClick={() => handleDelete(transaction.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <div className="md:hidden divide-y">
+        {transactions.map((transaction) => (
+          <div
+            key={transaction.id}
+            className="flex items-center gap-3 p-4"
+          >
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                transaction.type === "INCOME"
+                  ? "bg-emerald-500/10"
+                  : "bg-red-500/10"
+              }`}
+            >
+              {transaction.type === "INCOME" ? (
+                <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
+              ) : (
+                <ArrowDownCircle className="h-5 w-5 text-red-500" />
+              )}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">
                 {transaction.description}
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className="gap-1.5 font-normal">
-                  {transaction.category?.icon && (
-                    <span>{transaction.category.icon}</span>
-                  )}
-                  {transaction.category?.name}
-                </Badge>
-              </TableCell>
-              <TableCell>{formatDate(transaction.date)}</TableCell>
-              <TableCell
-                className={`text-right font-semibold ${getTransactionColor(
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs text-muted-foreground">
+                  {transaction.category?.icon} {transaction.category?.name}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(transaction.date)}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <p
+                className={`text-sm font-semibold whitespace-nowrap ${getTransactionColor(
                   transaction.type
                 )}`}
               >
-                {transaction.type === "EXPENSE" ? "- " : "+ "}
+                {transaction.type === "EXPENSE" ? "-" : "+"}
                 {formatCurrency(transaction.amount)}
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => onEdit(transaction)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-red-500 hover:text-red-600"
-                    onClick={() => handleDelete(transaction.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              </p>
+              <div className="flex gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => onEdit(transaction)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-500"
+                  onClick={() => handleDelete(transaction.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

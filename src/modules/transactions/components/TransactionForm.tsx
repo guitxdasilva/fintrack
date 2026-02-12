@@ -5,6 +5,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import { Label } from "@/common/components/ui/label";
@@ -30,6 +31,22 @@ import { Calendar } from "@/common/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import type { Transaction, Category, TransactionType } from "@/types";
 
+const transactionSchema = z.object({
+  description: z
+    .string()
+    .min(1, "Descrição é obrigatória")
+    .max(100, "Descrição deve ter no máximo 100 caracteres"),
+  amount: z
+    .string()
+    .min(1, "Valor é obrigatório")
+    .refine((v) => !isNaN(parseFloat(v)) && parseFloat(v) > 0, "Valor deve ser maior que zero"),
+  categoryId: z
+    .string()
+    .min(1, "Selecione uma categoria"),
+});
+
+type FieldErrors = Partial<Record<keyof z.infer<typeof transactionSchema>, string>>;
+
 interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -50,6 +67,7 @@ export function TransactionForm({
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [date, setDate] = useState<Date>(new Date());
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!transaction;
 
@@ -89,22 +107,21 @@ export function TransactionForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFieldErrors({});
 
-    if (!description.trim()) {
-      toast.error("Descrição é obrigatória");
+    const result = transactionSchema.safeParse({ description, amount, categoryId });
+
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof FieldErrors;
+        if (!errors[field]) errors[field] = issue.message;
+      });
+      setFieldErrors(errors);
       return;
     }
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      toast.error("Valor deve ser maior que zero");
-      return;
-    }
-
-    if (!categoryId) {
-      toast.error("Selecione uma categoria");
-      return;
-    }
+    const parsedAmount = parseFloat(result.data.amount);
 
     setLoading(true);
 
@@ -198,7 +215,11 @@ export function TransactionForm({
               placeholder="Ex: Supermercado"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className={fieldErrors.description ? "border-destructive" : ""}
             />
+            {fieldErrors.description && (
+              <p className="text-xs text-destructive">{fieldErrors.description}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -211,13 +232,17 @@ export function TransactionForm({
               placeholder="0,00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              className={fieldErrors.amount ? "border-destructive" : ""}
             />
+            {fieldErrors.amount && (
+              <p className="text-xs text-destructive">{fieldErrors.amount}</p>
+            )}
           </div>
 
           <div className="space-y-2">
             <Label>Categoria</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={cn("w-full", fieldErrors.categoryId && "border-destructive")}>
                 <SelectValue placeholder="Selecione a categoria" />
               </SelectTrigger>
               <SelectContent portal={false} position="popper" className="max-h-60">
@@ -236,6 +261,9 @@ export function TransactionForm({
                 )}
               </SelectContent>
             </Select>
+            {fieldErrors.categoryId && (
+              <p className="text-xs text-destructive">{fieldErrors.categoryId}</p>
+            )}
           </div>
 
           <div className="space-y-2">

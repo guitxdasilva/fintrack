@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import { Label } from "@/common/components/ui/label";
@@ -19,6 +20,15 @@ import {
   SelectValue,
 } from "@/common/components/ui/select";
 import type { Category, TransactionType } from "@/types";
+
+const categorySchema = z.object({
+  name: z
+    .string()
+    .min(1, "Nome é obrigatório")
+    .max(50, "Nome deve ter no máximo 50 caracteres"),
+});
+
+type FieldErrors = Partial<Record<"name", string>>;
 
 interface CategoryFormProps {
   open: boolean;
@@ -50,6 +60,7 @@ export function CategoryForm({
   const [type, setType] = useState<TransactionType>("EXPENSE");
   const [color, setColor] = useState("#6366f1");
   const [icon, setIcon] = useState("📦");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!category;
 
@@ -69,9 +80,17 @@ export function CategoryForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFieldErrors({});
 
-    if (!name.trim()) {
-      toast.error("Nome é obrigatório");
+    const result = categorySchema.safeParse({ name: name.trim() });
+
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof FieldErrors;
+        if (!errors[field]) errors[field] = issue.message;
+      });
+      setFieldErrors(errors);
       return;
     }
 
@@ -128,7 +147,11 @@ export function CategoryForm({
               placeholder="Ex: Alimentação"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className={fieldErrors.name ? "border-destructive" : ""}
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-destructive">{fieldErrors.name}</p>
+            )}
           </div>
 
           <div className="space-y-2">

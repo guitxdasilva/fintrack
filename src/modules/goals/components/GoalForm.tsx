@@ -5,6 +5,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import { Label } from "@/common/components/ui/label";
@@ -22,6 +23,22 @@ import {
 import { Calendar } from "@/common/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import type { Goal } from "@/types";
+
+const goalSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Nome é obrigatório")
+    .max(100, "Nome deve ter no máximo 100 caracteres"),
+  targetAmount: z
+    .string()
+    .min(1, "Valor alvo é obrigatório")
+    .refine((v) => !isNaN(parseFloat(v)) && parseFloat(v) > 0, "Valor alvo deve ser maior que zero"),
+  currentAmount: z
+    .string()
+    .refine((v) => v === "" || (!isNaN(parseFloat(v)) && parseFloat(v) >= 0), "Valor atual não pode ser negativo"),
+});
+
+type FieldErrors = Partial<Record<keyof z.infer<typeof goalSchema>, string>>;
 
 interface GoalFormProps {
   open: boolean;
@@ -41,6 +58,7 @@ export function GoalForm({
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("");
   const [deadline, setDeadline] = useState<Date | undefined>();
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!goal;
 
@@ -60,23 +78,22 @@ export function GoalForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setFieldErrors({});
 
-    if (!name.trim()) {
-      toast.error("Nome é obrigatório");
+    const result = goalSchema.safeParse({ name: name.trim(), targetAmount, currentAmount });
+
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      result.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof FieldErrors;
+        if (!errors[field]) errors[field] = issue.message;
+      });
+      setFieldErrors(errors);
       return;
     }
 
-    const parsedTarget = parseFloat(targetAmount);
-    if (isNaN(parsedTarget) || parsedTarget <= 0) {
-      toast.error("Valor alvo deve ser maior que zero");
-      return;
-    }
-
-    const parsedCurrent = currentAmount ? parseFloat(currentAmount) : 0;
-    if (isNaN(parsedCurrent) || parsedCurrent < 0) {
-      toast.error("Valor atual não pode ser negativo");
-      return;
-    }
+    const parsedTarget = parseFloat(result.data.targetAmount);
+    const parsedCurrent = result.data.currentAmount ? parseFloat(result.data.currentAmount) : 0;
 
     setLoading(true);
 
@@ -132,7 +149,11 @@ export function GoalForm({
               placeholder="Ex: Reserva de emergência"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className={fieldErrors.name ? "border-destructive" : ""}
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-destructive">{fieldErrors.name}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -146,7 +167,11 @@ export function GoalForm({
                 placeholder="0,00"
                 value={targetAmount}
                 onChange={(e) => setTargetAmount(e.target.value)}
+                className={fieldErrors.targetAmount ? "border-destructive" : ""}
               />
+              {fieldErrors.targetAmount && (
+                <p className="text-xs text-destructive">{fieldErrors.targetAmount}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="currentAmount">Valor Atual</Label>
@@ -158,7 +183,11 @@ export function GoalForm({
                 placeholder="0,00"
                 value={currentAmount}
                 onChange={(e) => setCurrentAmount(e.target.value)}
+                className={fieldErrors.currentAmount ? "border-destructive" : ""}
               />
+              {fieldErrors.currentAmount && (
+                <p className="text-xs text-destructive">{fieldErrors.currentAmount}</p>
+              )}
             </div>
           </div>
 
