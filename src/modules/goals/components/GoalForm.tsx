@@ -21,7 +21,7 @@ import {
   PopoverTrigger,
 } from "@/common/components/ui/popover";
 import { Calendar } from "@/common/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Goal } from "@/types";
 
 const goalSchema = z.object({
@@ -169,6 +169,11 @@ export function GoalForm({
                 onChange={(e) => setTargetAmount(e.target.value)}
                 className={fieldErrors.targetAmount ? "border-destructive" : ""}
               />
+              {targetAmount && !isNaN(parseFloat(targetAmount)) && parseFloat(targetAmount) > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {formatCurrency(parseFloat(targetAmount))}
+                </p>
+              )}
               {fieldErrors.targetAmount && (
                 <p className="text-xs text-destructive">{fieldErrors.targetAmount}</p>
               )}
@@ -185,6 +190,11 @@ export function GoalForm({
                 onChange={(e) => setCurrentAmount(e.target.value)}
                 className={fieldErrors.currentAmount ? "border-destructive" : ""}
               />
+              {currentAmount && !isNaN(parseFloat(currentAmount)) && parseFloat(currentAmount) > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {formatCurrency(parseFloat(currentAmount))}
+                </p>
+              )}
               {fieldErrors.currentAmount && (
                 <p className="text-xs text-destructive">{fieldErrors.currentAmount}</p>
               )}

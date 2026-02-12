@@ -28,7 +28,7 @@ import {
   PopoverTrigger,
 } from "@/common/components/ui/popover";
 import { Calendar } from "@/common/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { Transaction, Category, TransactionType } from "@/types";
 
 const transactionSchema = z.object({
@@ -234,6 +234,11 @@ export function TransactionForm({
               onChange={(e) => setAmount(e.target.value)}
               className={fieldErrors.amount ? "border-destructive" : ""}
             />
+            {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Valor: <span className="font-medium">{formatCurrency(parseFloat(amount))}</span>
+              </p>
+            )}
             {fieldErrors.amount && (
               <p className="text-xs text-destructive">{fieldErrors.amount}</p>
             )}
