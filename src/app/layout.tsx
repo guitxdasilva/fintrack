@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Toaster } from "react-hot-toast";
+import { Toaster } from "@/common/components/ui/sonner";
 import { TooltipProvider } from "@/common/components/ui/tooltip";
 import "./globals.css";
 
@@ -26,16 +26,7 @@ export default function RootLayout({
         <TooltipProvider>
           {children}
         </TooltipProvider>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: "#1f2937",
-              color: "#f9fafb",
-            },
-          }}
-        />
+        <Toaster position="bottom-right" richColors closeButton />
       </body>
     </html>
   );

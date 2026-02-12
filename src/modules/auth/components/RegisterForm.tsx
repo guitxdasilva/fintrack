@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
@@ -31,11 +32,13 @@ export function RegisterForm() {
 
     if (password !== confirmPassword) {
       setError("As senhas não coincidem");
+      toast.error("As senhas não coincidem");
       return;
     }
 
     if (password.length < 6) {
       setError("A senha deve ter pelo menos 6 caracteres");
+      toast.error("A senha deve ter pelo menos 6 caracteres");
       return;
     }
 
@@ -51,6 +54,7 @@ export function RegisterForm() {
 
     if (!res.ok) {
       setError(data.error);
+      toast.error(data.error);
       setLoading(false);
       return;
     }
@@ -65,9 +69,11 @@ export function RegisterForm() {
 
     if (result?.error) {
       setError("Conta criada, mas erro ao fazer login automático");
+      toast.error("Erro ao fazer login automático");
       return;
     }
 
+    toast.success("Conta criada com sucesso!");
     router.push("/dashboard");
   };
 

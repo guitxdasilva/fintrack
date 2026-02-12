@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { TrendingUp, Loader2 } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
@@ -38,9 +39,11 @@ export function LoginForm() {
 
     if (result?.error) {
       setError("Email ou senha incorretos");
+      toast.error("Email ou senha incorretos");
       return;
     }
 
+    toast.success("Login realizado!");
     router.push("/dashboard");
   };
 
