@@ -51,13 +51,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const transactions = await prisma.transaction.findMany({
-      where,
-      include: { category: true },
-      orderBy: { date: "desc" },
-    });
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json({ data: transactions });
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: { category: true },
+        orderBy: { date: "desc" },
+        skip,
+        take: limit,
+      }),
+      prisma.transaction.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      data: transactions,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch {
     return NextResponse.json(
       { error: "Erro ao buscar transações" },

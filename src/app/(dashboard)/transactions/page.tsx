@@ -9,7 +9,15 @@ import {
   TransactionFilters,
   type FilterValues,
 } from "@/modules/transactions/components/TransactionFilters";
+import { Pagination } from "@/common/components/ui/pagination";
 import type { Transaction } from "@/types";
+
+interface PaginationData {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -22,6 +30,13 @@ export default function TransactionsPage() {
     categoryId: "",
     search: "",
   });
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationData>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -30,22 +45,33 @@ export default function TransactionsPage() {
       if (filters.type !== "ALL") params.set("type", filters.type);
       if (filters.categoryId) params.set("categoryId", filters.categoryId);
       if (filters.search) params.set("search", filters.search);
+      params.set("page", String(page));
+      params.set("limit", "10");
 
       const res = await fetch(`/api/transactions?${params.toString()}`);
       const json = await res.json();
       if (json.data) {
         setTransactions(json.data);
       }
+      if (json.pagination) {
+        setPagination(json.pagination);
+      }
     } catch {
       setTransactions([]);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, page]);
 
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
+
+  // Reset to page 1 when filters change
+  const handleFilterChange = useCallback((newFilters: FilterValues) => {
+    setFilters(newFilters);
+    setPage(1);
+  }, []);
 
   function handleEdit(transaction: Transaction) {
     setEditingTransaction(transaction);
@@ -56,10 +82,6 @@ export default function TransactionsPage() {
     setEditingTransaction(null);
     setFormOpen(true);
   }
-
-  const handleFilterChange = useCallback((newFilters: FilterValues) => {
-    setFilters(newFilters);
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -86,6 +108,12 @@ export default function TransactionsPage() {
           loading={loading}
           onEdit={handleEdit}
           onDelete={fetchTransactions}
+        />
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          onPageChange={setPage}
         />
       </div>
 
