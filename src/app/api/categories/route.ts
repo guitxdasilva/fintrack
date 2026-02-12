@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
+import { z } from "zod";
+
+const createCategorySchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  icon: z.string().optional(),
+  color: z.string().optional().default("#6366f1"),
+  type: z.enum(["INCOME", "EXPENSE"]),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,6 +51,55 @@ export async function GET(request: NextRequest) {
   } catch {
     return NextResponse.json(
       { error: "Erro ao buscar categorias" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const result = createCategorySchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const { name, icon, color, type } = result.data;
+
+    const existing = await prisma.category.findFirst({
+      where: { name, userId: session.user.id },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "Já existe uma categoria com esse nome" },
+        { status: 400 }
+      );
+    }
+
+    const category = await prisma.category.create({
+      data: {
+        name,
+        icon,
+        color,
+        type,
+        userId: session.user.id,
+      },
+    });
+
+    return NextResponse.json({ data: category }, { status: 201 });
+  } catch {
+    return NextResponse.json(
+      { error: "Erro ao criar categoria" },
       { status: 500 }
     );
   }
