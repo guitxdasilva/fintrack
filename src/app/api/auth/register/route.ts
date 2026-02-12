@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -33,6 +34,13 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
       },
+    });
+
+    await prisma.category.createMany({
+      data: DEFAULT_CATEGORIES.map((cat) => ({
+        ...cat,
+        userId: user.id,
+      })),
     });
 
     return NextResponse.json(
