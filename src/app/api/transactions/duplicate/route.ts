@@ -33,6 +33,8 @@ export async function POST(request: NextRequest) {
       where: {
         id: { in: transactionIds },
         userId: session.user.id,
+        // Exclude installment transactions — they auto-generate across months
+        installmentGroupId: null,
       },
       include: { category: true },
     });
@@ -84,6 +86,9 @@ export async function POST(request: NextRequest) {
           description: t.description,
           date: new Date(year, month, safeDay),
           categoryId: t.categoryId,
+          paymentType: t.paymentType,
+          cardId: t.cardId,
+          cardType: t.cardType,
           userId: session.user!.id!,
         };
       }),

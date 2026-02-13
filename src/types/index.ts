@@ -7,6 +7,26 @@ export interface SessionUser {
 
 export type TransactionType = "INCOME" | "EXPENSE";
 
+export type PaymentType = "CASH" | "PIX" | "CARD" | "TRANSFER" | "BANK_SLIP";
+
+export const PAYMENT_TYPE_LABELS: Record<PaymentType, string> = {
+  CASH: "Dinheiro",
+  PIX: "PIX",
+  CARD: "Cartão",
+  TRANSFER: "Transferência",
+  BANK_SLIP: "Boleto",
+};
+
+export const PAYMENT_TYPE_ICONS: Record<PaymentType, string> = {
+  CASH: "💵",
+  PIX: "⚡",
+  CARD: "💳",
+  TRANSFER: "🏦",
+  BANK_SLIP: "📄",
+};
+
+export const PAYMENT_TYPES: PaymentType[] = ["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"];
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -18,6 +38,13 @@ export interface Transaction {
   userId: string;
   categoryId: string;
   category: Category;
+  paymentType?: string | null;
+  cardId?: string | null;
+  card?: Card | null;
+  cardType?: string | null;
+  installments?: number | null;
+  currentInstallment?: number | null;
+  installmentGroupId?: string | null;
 }
 
 export interface CreateTransactionDTO {
@@ -26,9 +53,20 @@ export interface CreateTransactionDTO {
   description: string;
   date: string;
   categoryId: string;
+  paymentType?: string;
+  cardId?: string;
+  cardType?: string;
+  installments?: number;
 }
 
 export type UpdateTransactionDTO = Partial<CreateTransactionDTO>;
+
+export interface Card {
+  id: string;
+  name: string;
+  icon?: string;
+  userId: string;
+}
 
 export interface Category {
   id: string;

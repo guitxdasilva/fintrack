@@ -23,6 +23,8 @@ import { Button } from "@/common/components/ui/button";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { formatCurrency, formatDate, getTransactionColor } from "@/lib/utils";
 import type { Transaction } from "@/types";
+import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
+import type { PaymentType } from "@/types";
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -95,6 +97,8 @@ export function TransactionList({
             <TableRow>
               <TableHead>Descrição</TableHead>
               <TableHead>Categoria</TableHead>
+              <TableHead>Pagamento</TableHead>
+              <TableHead>Parcela</TableHead>
               <TableHead>Data</TableHead>
               <TableHead className="text-right">Valor</TableHead>
               <TableHead className="text-right w-25">Ações</TableHead>
@@ -113,6 +117,37 @@ export function TransactionList({
                     )}
                     {transaction.category?.name}
                   </Badge>
+                </TableCell>
+                <TableCell>
+                  {transaction.paymentType ? (
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="gap-1.5 font-normal">
+                        <span>{PAYMENT_TYPE_ICONS[transaction.paymentType as PaymentType]}</span>
+                        {PAYMENT_TYPE_LABELS[transaction.paymentType as PaymentType]}
+                      </Badge>
+                      {transaction.paymentType === "CARD" && transaction.card && (
+                        <Badge variant="secondary" className="text-xs font-normal">
+                          {transaction.card.icon} {transaction.card.name}
+                        </Badge>
+                      )}
+                      {transaction.cardType && (
+                        <Badge variant="secondary" className="text-xs font-normal">
+                          {transaction.cardType === "CREDIT" ? "Crédito" : "Débito"}
+                        </Badge>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {transaction.installments ? (
+                    <Badge variant="outline" className="font-normal text-xs">
+                      {transaction.currentInstallment}/{transaction.installments}
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground text-sm">—</span>
+                  )}
                 </TableCell>
                 <TableCell>{formatDate(transaction.date)}</TableCell>
                 <TableCell
@@ -177,6 +212,22 @@ export function TransactionList({
                 <span className="text-xs text-muted-foreground">
                   {transaction.category?.icon} {transaction.category?.name}
                 </span>
+                {transaction.paymentType && (
+                  <span className="text-xs text-muted-foreground">
+                    • {PAYMENT_TYPE_ICONS[transaction.paymentType as PaymentType]} {PAYMENT_TYPE_LABELS[transaction.paymentType as PaymentType]}
+                    {transaction.paymentType === "CARD" && transaction.card && (
+                      <> · {transaction.card.name}</>
+                    )}
+                    {transaction.cardType && (
+                      <> ({transaction.cardType === "CREDIT" ? "Créd." : "Déb."})</>
+                    )}
+                  </span>
+                )}
+                {transaction.installments && (
+                  <span className="text-xs text-muted-foreground">
+                    • {transaction.currentInstallment}/{transaction.installments}
+                  </span>
+                )}
                 <span className="text-xs text-muted-foreground">
                   {formatDate(transaction.date)}
                 </span>

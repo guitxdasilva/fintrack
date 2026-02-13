@@ -44,18 +44,29 @@ export async function GET(request: NextRequest) {
 
     const transactions = await prisma.transaction.findMany({
       where,
-      include: { category: true },
+      include: { category: true, card: true },
       orderBy: { date: "desc" },
     });
 
-    const header = "Data,Tipo,Categoria,Descrição,Valor";
+    const header = "Data,Tipo,Categoria,Pagamento,Cartão,Tipo Cartão,Parcela,Descrição,Valor";
+    const paymentTypeLabels: Record<string, string> = {
+      CASH: "Dinheiro",
+      PIX: "PIX",
+      CARD: "Cartão",
+      TRANSFER: "Transferência",
+      BANK_SLIP: "Boleto",
+    };
     const rows = transactions.map((t) => {
       const date = new Date(t.date).toLocaleDateString("pt-BR");
       const type = t.type === "INCOME" ? "Receita" : "Despesa";
       const category = t.category?.name || "";
-      const description = `"${t.description.replace(/"/g, '""')}"`;
+      const paymentType = t.paymentType ? (paymentTypeLabels[t.paymentType] || t.paymentType) : "";
+      const cardName = t.card?.name || "";
+      const cardType = t.cardType === "CREDIT" ? "Crédito" : t.cardType === "DEBIT" ? "Débito" : "";
+      const installment = t.installments ? `${t.currentInstallment}/${t.installments}` : "";
+      const description = `"${t.description.replace(/"/g, '""')}"`;  
       const amount = t.amount.toFixed(2).replace(".", ",");
-      return `${date},${type},${category},${description},${amount}`;
+      return `${date},${type},${category},${paymentType},${cardName},${cardType},${installment},${description},${amount}`;
     });
 
     const csv = [header, ...rows].join("\n");

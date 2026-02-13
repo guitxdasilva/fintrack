@@ -16,10 +16,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts      Account[]
-  transactions  Transaction[]
-  categories    Category[]
-  goals         Goal[]
+  accounts       Account[]
+  transactions   Transaction[]
+  categories     Category[]
+  goals          Goal[]
+  cards          Card[]
 }
 
 model Account {
@@ -56,8 +57,18 @@ model Transaction {
   categoryId  String
   category    Category          @relation(fields: [categoryId], references: [id])
 
+  paymentType String?
+  cardId      String?
+  card        Card?             @relation(fields: [cardId], references: [id])
+
+  cardType           String?
+  installments       Int?
+  currentInstallment Int?
+  installmentGroupId String?
+
   @@index([userId])
   @@index([date])
+  @@index([installmentGroupId])
 }
 
 model Category {
@@ -89,6 +100,21 @@ model Goal {
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+}
+
+model Card {
+  id          String   @id @default(cuid())
+  name        String
+  icon        String?
+  createdAt   DateTime @default(now())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+
+  @@unique([name, userId])
   @@index([userId])
 }
 

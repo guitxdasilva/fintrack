@@ -9,6 +9,10 @@ const createTransactionSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória"),
   date: z.string().min(1, "Data é obrigatória"),
   categoryId: z.string().min(1, "Categoria é obrigatória"),
+  paymentType: z.enum(["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"]).optional(),
+  cardId: z.string().optional(),
+  cardType: z.enum(["CREDIT", "DEBIT"]).optional(),
+  installments: z.number().int().min(2).max(48).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -58,7 +62,7 @@ export async function GET(request: NextRequest) {
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
         where,
-        include: { category: true },
+        include: { category: true, card: true },
         orderBy: { date: "desc" },
         skip,
         take: limit,
@@ -100,7 +104,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { amount, type, description, date, categoryId } = result.data;
+    const { amount, type, description, date, categoryId, paymentType, cardId, cardType, installments } = result.data;
 
     const category = await prisma.category.findFirst({
       where: { id: categoryId, userId: session.user.id },
@@ -113,6 +117,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Handle installment creation
+    if (type === "EXPENSE" && installments && installments >= 2) {
+      const installmentAmount = Math.round((amount / installments) * 100) / 100;
+      const groupId = globalThis.crypto.randomUUID();
+      const baseDate = new Date(date);
+
+      const data = Array.from({ length: installments }, (_, i) => {
+        const installmentDate = new Date(baseDate);
+        installmentDate.setMonth(installmentDate.getMonth() + i);
+        // Handle month overflow (e.g., Jan 31 -> Feb 28)
+        const maxDay = new Date(
+          installmentDate.getFullYear(),
+          installmentDate.getMonth() + 1,
+          0
+        ).getDate();
+        if (installmentDate.getDate() > maxDay) {
+          installmentDate.setDate(maxDay);
+        }
+
+        return {
+          amount: installmentAmount,
+          type: type as "INCOME" | "EXPENSE",
+          description: `${description} (${i + 1}/${installments})`,
+          date: installmentDate,
+          userId: session.user!.id!,
+          categoryId,
+          paymentType: paymentType || null,
+          cardId: cardId || null,
+          cardType: cardType || null,
+          installments,
+          currentInstallment: i + 1,
+          installmentGroupId: groupId,
+        };
+      });
+
+      const created = await prisma.transaction.createMany({ data });
+
+      return NextResponse.json(
+        { message: `${created.count} parcelas criadas com sucesso`, count: created.count },
+        { status: 201 }
+      );
+    }
+
     const transaction = await prisma.transaction.create({
       data: {
         amount,
@@ -121,8 +168,11 @@ export async function POST(request: NextRequest) {
         date: new Date(date),
         userId: session.user.id,
         categoryId,
+        paymentType: paymentType || null,
+        cardId: cardId || null,
+        cardType: cardType || null,
       },
-      include: { category: true },
+      include: { category: true, card: true },
     });
 
     return NextResponse.json({ data: transaction }, { status: 201 });

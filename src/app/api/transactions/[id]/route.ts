@@ -9,6 +9,9 @@ const updateTransactionSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória").optional(),
   date: z.string().min(1, "Data é obrigatória").optional(),
   categoryId: z.string().min(1, "Categoria é obrigatória").optional(),
+  paymentType: z.enum(["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"]).nullable().optional(),
+  cardId: z.string().nullable().optional(),
+  cardType: z.enum(["CREDIT", "DEBIT"]).nullable().optional(),
 });
 
 export async function PUT(
@@ -63,10 +66,22 @@ export async function PUT(
       data.categoryId = result.data.categoryId;
     }
 
+    if (result.data.paymentType !== undefined) {
+      data.paymentType = result.data.paymentType;
+    }
+
+    if (result.data.cardId !== undefined) {
+      data.cardId = result.data.cardId;
+    }
+
+    if (result.data.cardType !== undefined) {
+      data.cardType = result.data.cardType;
+    }
+
     const transaction = await prisma.transaction.update({
       where: { id },
       data,
-      include: { category: true },
+      include: { category: true, card: true },
     });
 
     return NextResponse.json({ data: transaction });

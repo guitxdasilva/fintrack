@@ -82,7 +82,9 @@ export function BulkDuplicateDialog({
 
       const res = await fetch(`/api/transactions?${params.toString()}`);
       const json = await res.json();
-      const data: Transaction[] = json.data || [];
+      const allData: Transaction[] = json.data || [];
+      // Exclude installment transactions — they auto-generate across months
+      const data = allData.filter((t) => !t.installmentGroupId);
       setSourceTransactions(data);
       setSelectedIds(new Set(data.map((t) => t.id)));
     } catch {

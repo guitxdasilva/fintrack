@@ -29,7 +29,8 @@ import {
 } from "@/common/components/ui/popover";
 import { Calendar } from "@/common/components/ui/calendar";
 import { cn, formatCurrency } from "@/lib/utils";
-import type { Transaction, Category, TransactionType } from "@/types";
+import type { Transaction, Category, TransactionType, Card, PaymentType } from "@/types";
+import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS, PAYMENT_TYPES } from "@/types";
 
 const transactionSchema = z.object({
   description: z
@@ -62,10 +63,16 @@ export function TransactionForm({
 }: TransactionFormProps) {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
   const [type, setType] = useState<TransactionType>("EXPENSE");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [paymentType, setPaymentType] = useState<PaymentType | "">("");
+  const [cardId, setCardId] = useState("");
+  const [cardType, setCardType] = useState<"CREDIT" | "DEBIT" | "">("")
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installments, setInstallments] = useState("2");
   const [date, setDate] = useState<Date>(new Date());
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
@@ -77,12 +84,22 @@ export function TransactionForm({
       setDescription(transaction.description);
       setAmount(String(transaction.amount));
       setCategoryId(transaction.categoryId);
+      setPaymentType((transaction.paymentType as PaymentType) || "");
+      setCardId(transaction.cardId || "");
+      setCardType((transaction.cardType as "CREDIT" | "DEBIT") || "");
+      setIsInstallment(false);
+      setInstallments("2");
       setDate(new Date(transaction.date));
     } else {
       setType("EXPENSE");
       setDescription("");
       setAmount("");
       setCategoryId("");
+      setPaymentType("");
+      setCardId("");
+      setCardType("");
+      setIsInstallment(false);
+      setInstallments("2");
       setDate(new Date());
     }
   }, [transaction, open]);
@@ -103,6 +120,18 @@ export function TransactionForm({
     }
 
     fetchCategories();
+
+    async function fetchCards() {
+      try {
+        const res = await fetch("/api/cards");
+        const json = await res.json();
+        if (json.data) setCards(json.data);
+      } catch {
+        // silently fail
+      }
+    }
+
+    fetchCards();
   }, [type, open]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -126,12 +155,23 @@ export function TransactionForm({
     setLoading(true);
 
     try {
+      if (paymentType === "CARD" && !cardType) {
+        toast.error("Selecione se é Crédito ou Débito");
+        return;
+      }
+
       const payload = {
         amount: parsedAmount,
         type,
         description: description.trim(),
         date: date.toISOString(),
         categoryId,
+        paymentType: paymentType || undefined,
+        cardId: paymentType === "CARD" && cardId ? cardId : undefined,
+        cardType: paymentType === "CARD" && cardType ? cardType : undefined,
+        ...(type === "EXPENSE" && isInstallment && !isEditing
+          ? { installments: parseInt(installments) }
+          : {}),
       };
 
       const url = isEditing
@@ -154,7 +194,9 @@ export function TransactionForm({
       toast.success(
         isEditing
           ? "Transação atualizada com sucesso"
-          : "Transação criada com sucesso"
+          : type === "EXPENSE" && isInstallment
+            ? `Despesa parcelada em ${installments}x criada com sucesso`
+            : "Transação criada com sucesso"
       );
       onOpenChange(false);
       onSuccess();
@@ -270,6 +312,126 @@ export function TransactionForm({
               <p className="text-xs text-destructive">{fieldErrors.categoryId}</p>
             )}
           </div>
+
+          <div className="space-y-2">
+            <Label>Forma de Pagamento</Label>
+            <Select value={paymentType} onValueChange={(v) => {
+                const newType = v === "none" ? "" : v as PaymentType;
+                setPaymentType(newType);
+                if (newType !== "CARD") {
+                  setCardId("");
+                  setCardType("");
+                }
+              }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione (opcional)" />
+                </SelectTrigger>
+                <SelectContent portal={false} position="popper" className="max-h-60">
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {PAYMENT_TYPES.map((pt) => (
+                    <SelectItem key={pt} value={pt}>
+                      <span className="flex items-center gap-2">
+                        <span>{PAYMENT_TYPE_ICONS[pt]}</span>
+                        {PAYMENT_TYPE_LABELS[pt]}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+            </Select>
+          </div>
+
+          {paymentType === "CARD" && (
+            <>
+              {cards.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Cartão</Label>
+                  <Select value={cardId} onValueChange={setCardId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione o cartão (opcional)" />
+                    </SelectTrigger>
+                    <SelectContent portal={false} position="popper" className="max-h-60">
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {cards.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          <span className="flex items-center gap-2">
+                            {c.icon && <span>{c.icon}</span>}
+                            {c.name}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Tipo do Cartão</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={cardType === "CREDIT" ? "default" : "outline"}
+                    onClick={() => setCardType("CREDIT")}
+                  >
+                    Crédito
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={cardType === "DEBIT" ? "default" : "outline"}
+                    onClick={() => setCardType("DEBIT")}
+                  >
+                    Débito
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {type === "EXPENSE" && !isEditing && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isInstallment}
+                  onClick={() => setIsInstallment(!isInstallment)}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors",
+                    isInstallment ? "bg-primary" : "bg-muted"
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none block size-4 rounded-full bg-background shadow-lg ring-0 transition-transform",
+                      isInstallment ? "translate-x-4" : "translate-x-0"
+                    )}
+                  />
+                </button>
+                <Label className="cursor-pointer" onClick={() => setIsInstallment(!isInstallment)}>
+                  Parcelado
+                </Label>
+              </div>
+              {isInstallment && (
+                <div className="space-y-2">
+                  <Label htmlFor="installments">Número de parcelas</Label>
+                  <Input
+                    id="installments"
+                    type="number"
+                    min="2"
+                    max="48"
+                    value={installments}
+                    onChange={(e) => setInstallments(e.target.value)}
+                  />
+                  {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && parseInt(installments) >= 2 && (
+                    <p className="text-xs text-muted-foreground">
+                      {parseInt(installments)}x de{" "}
+                      <span className="font-medium">
+                        {formatCurrency(parseFloat(amount) / parseInt(installments))}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Data</Label>

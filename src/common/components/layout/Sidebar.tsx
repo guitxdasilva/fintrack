@@ -7,6 +7,7 @@ import {
   ArrowLeftRight,
   Tag,
   Target,
+  CreditCard,
   TrendingUp,
 } from "lucide-react";
 import {
@@ -36,6 +37,11 @@ const navItems = [
     title: "Categorias",
     url: "/categories",
     icon: Tag,
+  },
+  {
+    title: "Cartões",
+    url: "/cards",
+    icon: CreditCard,
   },
   {
     title: "Metas",

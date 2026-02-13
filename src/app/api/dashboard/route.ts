@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
             userId,
             date: { gte: startOfMonth, lte: endOfMonth },
           },
-          include: { category: true },
+          include: { category: true, card: true },
           orderBy: { date: "desc" },
           take: 5,
         }),
