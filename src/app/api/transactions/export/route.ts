@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       orderBy: { date: "desc" },
     });
 
-    const header = "Data,Tipo,Categoria,Pagamento,Cartão,Tipo Cartão,Parcela,Descrição,Valor,Pago";
+    const header = "Data,Tipo,Tipo Despesa,Categoria,Pagamento,Cartão,Tipo Cartão,Parcela,Descrição,Valor,Pago";
     const paymentTypeLabels: Record<string, string> = {
       CASH: "Dinheiro",
       PIX: "PIX",
@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
     const rows = transactions.map((t) => {
       const date = new Date(t.date).toLocaleDateString("pt-BR");
       const type = t.type === "INCOME" ? "Receita" : "Despesa";
+      const expenseType = t.type === "EXPENSE" ? (t.isFixed ? "Fixa" : "Variável") : "";
       const category = t.category?.name || "";
       const paymentType = t.paymentType ? (paymentTypeLabels[t.paymentType] || t.paymentType) : "";
       const cardName = t.card?.name || "";
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
       const description = `"${t.description.replace(/"/g, '""')}"`;  
       const amount = t.amount.toFixed(2).replace(".", ",");
       const paid = t.paid ? "Sim" : "Não";
-      return `${date},${type},${category},${paymentType},${cardName},${cardType},${installment},${description},${amount},${paid}`;
+      return `${date},${type},${expenseType},${category},${paymentType},${cardName},${cardType},${installment},${description},${amount},${paid}`;
     });
 
     const csv = [header, ...rows].join("\n");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle, Check, Circle, CheckCircle2, Loader2 } from "lucide-react";
+import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle, Check, Circle, CheckCircle2, Loader2, Pin } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -169,7 +169,15 @@ export function TransactionList({
                   )}
                 </TableCell>
                 <TableCell className="font-medium">
-                  {transaction.description}
+                  <span className="flex items-center gap-1.5">
+                    {transaction.description}
+                    {transaction.isFixed && (
+                      <Badge variant="outline" className="text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
+                        <Pin className="h-3 w-3" />
+                        Fixa
+                      </Badge>
+                    )}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="gap-1.5 font-normal">
@@ -316,6 +324,12 @@ export function TransactionList({
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
                 {transaction.description}
+                {transaction.isFixed && (
+                  <Badge variant="outline" className="ml-1.5 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
+                    <Pin className="h-3 w-3" />
+                    Fixa
+                  </Badge>
+                )}
               </p>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs text-muted-foreground">

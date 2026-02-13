@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Plus, Download, Copy } from "lucide-react";
+import { Plus, Download, Copy, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { TransactionList } from "@/modules/transactions/components/TransactionList";
 import { TransactionForm } from "@/modules/transactions/components/TransactionForm";
@@ -24,6 +24,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [defaultType, setDefaultType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
   const [bulkDuplicateOpen, setBulkDuplicateOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
@@ -80,8 +81,9 @@ export default function TransactionsPage() {
     setFormOpen(true);
   }
 
-  function handleNewTransaction() {
+  function handleNewTransaction(type: "EXPENSE" | "INCOME") {
     setEditingTransaction(null);
+    setDefaultType(type);
     setFormOpen(true);
   }
 
@@ -112,9 +114,21 @@ export default function TransactionsPage() {
             <Download className="mr-2 h-4 w-4" />
             Exportar CSV
           </Button>
-          <Button onClick={handleNewTransaction} size="lg">
-            <Plus className="mr-2 h-4 w-4" />
-            Nova Transação
+          <Button
+            onClick={() => handleNewTransaction("INCOME")}
+            size="lg"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <ArrowUpCircle className="mr-2 h-4 w-4" />
+            Nova Receita
+          </Button>
+          <Button
+            onClick={() => handleNewTransaction("EXPENSE")}
+            size="lg"
+            className="bg-red-600 hover:bg-red-700 text-white"
+          >
+            <ArrowDownCircle className="mr-2 h-4 w-4" />
+            Nova Despesa
           </Button>
         </div>
       </div>
@@ -143,6 +157,7 @@ export default function TransactionsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         transaction={editingTransaction}
+        defaultType={defaultType}
         onSuccess={fetchTransactions}
       />
 

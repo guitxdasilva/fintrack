@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
           cardType: t.cardType,
           paid: false,
           paidAt: null,
+          isFixed: t.isFixed,
           userId: session.user!.id!,
         };
       }),

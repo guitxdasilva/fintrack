@@ -47,6 +47,7 @@ export interface Transaction {
   installmentGroupId?: string | null;
   paid?: boolean;
   paidAt?: string | null;
+  isFixed?: boolean;
 }
 
 export interface CreateTransactionDTO {
@@ -59,6 +60,7 @@ export interface CreateTransactionDTO {
   cardId?: string;
   cardType?: string;
   installments?: number;
+  isFixed?: boolean;
 }
 
 export type UpdateTransactionDTO = Partial<CreateTransactionDTO>;

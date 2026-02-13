@@ -13,6 +13,7 @@ const createTransactionSchema = z.object({
   cardId: z.string().optional(),
   cardType: z.enum(["CREDIT", "DEBIT"]).optional(),
   installments: z.number().int().min(2).max(48).optional(),
+  isFixed: z.boolean().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { amount, type, description, date, categoryId, paymentType, cardId, cardType, installments } = result.data;
+    const { amount, type, description, date, categoryId, paymentType, cardId, cardType, installments, isFixed } = result.data;
 
     const category = await prisma.category.findFirst({
       where: { id: categoryId, userId: session.user.id },
@@ -149,6 +150,7 @@ export async function POST(request: NextRequest) {
           installments,
           currentInstallment: i + 1,
           installmentGroupId: groupId,
+          isFixed: isFixed || false,
         };
       });
 
@@ -171,6 +173,7 @@ export async function POST(request: NextRequest) {
         paymentType: paymentType || null,
         cardId: cardId || null,
         cardType: cardType || null,
+        isFixed: isFixed || false,
       },
       include: { category: true, card: true },
     });

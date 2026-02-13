@@ -12,6 +12,7 @@ const updateTransactionSchema = z.object({
   paymentType: z.enum(["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"]).nullable().optional(),
   cardId: z.string().nullable().optional(),
   cardType: z.enum(["CREDIT", "DEBIT"]).nullable().optional(),
+  isFixed: z.boolean().optional(),
 });
 
 export async function PUT(
@@ -76,6 +77,10 @@ export async function PUT(
 
     if (result.data.cardType !== undefined) {
       data.cardType = result.data.cardType;
+    }
+
+    if (result.data.isFixed !== undefined) {
+      data.isFixed = result.data.isFixed;
     }
 
     const transaction = await prisma.transaction.update({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Pin, ShoppingBag } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -52,6 +52,7 @@ interface TransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   transaction?: Transaction | null;
+  defaultType?: TransactionType;
   onSuccess: () => void;
 }
 
@@ -59,6 +60,7 @@ export function TransactionForm({
   open,
   onOpenChange,
   transaction,
+  defaultType = "EXPENSE",
   onSuccess,
 }: TransactionFormProps) {
   const [loading, setLoading] = useState(false);
@@ -73,6 +75,7 @@ export function TransactionForm({
   const [cardType, setCardType] = useState<"CREDIT" | "DEBIT" | "">("")
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState("2");
+  const [isFixed, setIsFixed] = useState(false);
   const [date, setDate] = useState<Date>(new Date());
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
@@ -89,9 +92,10 @@ export function TransactionForm({
       setCardType((transaction.cardType as "CREDIT" | "DEBIT") || "");
       setIsInstallment(false);
       setInstallments("2");
+      setIsFixed(transaction.isFixed || false);
       setDate(new Date(transaction.date));
     } else {
-      setType("EXPENSE");
+      setType(defaultType);
       setDescription("");
       setAmount("");
       setCategoryId("");
@@ -100,6 +104,7 @@ export function TransactionForm({
       setCardType("");
       setIsInstallment(false);
       setInstallments("2");
+      setIsFixed(false);
       setDate(new Date());
     }
   }, [transaction, open]);
@@ -166,10 +171,11 @@ export function TransactionForm({
         description: description.trim(),
         date: date.toISOString(),
         categoryId,
-        paymentType: paymentType || undefined,
-        cardId: paymentType === "CARD" && cardId ? cardId : undefined,
-        cardType: paymentType === "CARD" && cardType ? cardType : undefined,
-        ...(type === "EXPENSE" && isInstallment && !isEditing
+        isFixed: type === "EXPENSE" ? isFixed : false,
+        paymentType: type === "EXPENSE" && !isFixed ? (paymentType || undefined) : undefined,
+        cardId: type === "EXPENSE" && !isFixed && paymentType === "CARD" && cardId ? cardId : undefined,
+        cardType: type === "EXPENSE" && !isFixed && paymentType === "CARD" && cardType ? cardType : undefined,
+        ...(type === "EXPENSE" && !isFixed && isInstallment && !isEditing
           ? { installments: parseInt(installments) }
           : {}),
       };
@@ -217,6 +223,8 @@ export function TransactionForm({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Type toggle - only shown when editing (user already chose type via button) */}
+          {isEditing && (
           <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
@@ -249,6 +257,49 @@ export function TransactionForm({
               Receita
             </Button>
           </div>
+          )}
+
+          {/* Type indicator when creating */}
+          {!isEditing && (
+            <div className={cn(
+              "rounded-lg px-3 py-2 text-sm font-medium text-center",
+              type === "INCOME"
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-red-500/10 text-red-600 dark:text-red-400"
+            )}>
+              {type === "INCOME" ? "Nova Receita" : "Nova Despesa"}
+            </div>
+          )}
+
+          {/* Fixed vs Variable toggle - only for EXPENSE */}
+          {type === "EXPENSE" && (
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                type="button"
+                variant={!isFixed ? "default" : "outline"}
+                className={cn(
+                  "gap-2",
+                  !isFixed && "bg-orange-600 hover:bg-orange-700 text-white"
+                )}
+                onClick={() => setIsFixed(false)}
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Variável
+              </Button>
+              <Button
+                type="button"
+                variant={isFixed ? "default" : "outline"}
+                className={cn(
+                  "gap-2",
+                  isFixed && "bg-blue-600 hover:bg-blue-700 text-white"
+                )}
+                onClick={() => setIsFixed(true)}
+              >
+                <Pin className="h-4 w-4" />
+                Fixa
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
@@ -313,6 +364,7 @@ export function TransactionForm({
             )}
           </div>
 
+          {type === "EXPENSE" && !isFixed && (
           <div className="space-y-2">
             <Label>Forma de Pagamento</Label>
             <Select value={paymentType} onValueChange={(v) => {
@@ -339,8 +391,9 @@ export function TransactionForm({
                 </SelectContent>
             </Select>
           </div>
+          )}
 
-          {paymentType === "CARD" && (
+          {type === "EXPENSE" && !isFixed && paymentType === "CARD" && (
             <>
               {cards.length > 0 && (
                 <div className="space-y-2">
@@ -385,7 +438,7 @@ export function TransactionForm({
             </>
           )}
 
-          {type === "EXPENSE" && !isEditing && (
+          {type === "EXPENSE" && !isFixed && !isEditing && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <button
@@ -434,7 +487,7 @@ export function TransactionForm({
           )}
 
           <div className="space-y-2">
-            <Label>Data</Label>
+            <Label>{type === "EXPENSE" && isFixed ? "Data de Vencimento" : "Data"}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
