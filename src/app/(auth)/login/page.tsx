@@ -1,16 +1,8 @@
 import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 import { LoginForm } from "@/modules/auth/components/LoginForm";
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
 
-export default async function LoginPage() {
-  const session = await auth();
-
-  if (session?.user) {
-    redirect("/dashboard");
-  }
-
+export default function LoginPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between bg-gray-950 p-10 text-white">
