@@ -10,6 +10,38 @@ const updateCategorySchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]).optional(),
 });
 
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const category = await prisma.category.findFirst({
+      where: { id, userId: session.user.id },
+    });
+
+    if (!category) {
+      return NextResponse.json(
+        { error: "Categoria não encontrada" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ data: category });
+  } catch {
+    return NextResponse.json(
+      { error: "Erro ao buscar categoria" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

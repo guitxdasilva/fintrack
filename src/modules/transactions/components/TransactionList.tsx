@@ -97,7 +97,7 @@ export function TransactionList({
               <TableHead>Categoria</TableHead>
               <TableHead>Data</TableHead>
               <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right w-[100px]">Ações</TableHead>
+              <TableHead className="text-right w-25">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

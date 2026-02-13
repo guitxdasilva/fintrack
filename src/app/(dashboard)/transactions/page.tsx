@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, Copy } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { TransactionList } from "@/modules/transactions/components/TransactionList";
 import { TransactionForm } from "@/modules/transactions/components/TransactionForm";
+import { BulkDuplicateDialog } from "@/modules/transactions/components/BulkDuplicateDialog";
 import {
   TransactionFilters,
   type FilterValues,
@@ -23,6 +24,7 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [bulkDuplicateOpen, setBulkDuplicateOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [filters, setFilters] = useState<FilterValues>({
@@ -101,7 +103,11 @@ export default function TransactionsPage() {
             Gerencie suas receitas e despesas
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setBulkDuplicateOpen(true)} variant="outline" size="lg">
+            <Copy className="mr-2 h-4 w-4" />
+            Duplicar Mês
+          </Button>
           <Button onClick={handleExportCSV} variant="outline" size="lg">
             <Download className="mr-2 h-4 w-4" />
             Exportar CSV
@@ -136,6 +142,12 @@ export default function TransactionsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         transaction={editingTransaction}
+        onSuccess={fetchTransactions}
+      />
+
+      <BulkDuplicateDialog
+        open={bulkDuplicateOpen}
+        onOpenChange={setBulkDuplicateOpen}
         onSuccess={fetchTransactions}
       />
     </div>
