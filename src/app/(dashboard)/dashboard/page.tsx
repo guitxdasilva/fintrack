@@ -6,7 +6,7 @@ import { Button } from "@/common/components/ui/button";
 import { BalanceCard } from "@/modules/dashboard/components/BalanceCard";
 import { ExpenseChart } from "@/modules/dashboard/components/ExpenseChart";
 import { IncomeVsExpense } from "@/modules/dashboard/components/IncomeVsExpense";
-import { RecentTransactions } from "@/modules/dashboard/components/RecentTransactions";
+import { MonthTransactions } from "@/modules/dashboard/components/MonthTransactions";
 import type { DashboardData } from "@/types";
 
 const MONTH_NAMES = [
@@ -127,8 +127,8 @@ export default function DashboardPage() {
           data={data?.expensesByCategory ?? []}
           isLoading={isLoading}
         />
-        <RecentTransactions
-          transactions={data?.recentTransactions ?? []}
+        <MonthTransactions
+          transactions={data?.transactions ?? []}
           isLoading={isLoading}
         />
       </div>

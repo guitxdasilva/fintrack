@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const chartStart = new Date(targetYear, targetMonth - 5, 1);
     const chartEnd = endOfMonth;
 
-    const [selectedMonthTransactions, chartTransactions, recentTransactions] =
+    const [selectedMonthTransactions, chartTransactions, allMonthTransactions] =
       await Promise.all([
         prisma.transaction.findMany({
           where: {
@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
           },
           include: { category: true, card: true },
           orderBy: { date: "desc" },
-          take: 5,
         }),
       ]);
 
@@ -125,7 +124,7 @@ export async function GET(request: NextRequest) {
         balance,
         totalIncome,
         totalExpense,
-        recentTransactions,
+        transactions: allMonthTransactions,
         expensesByCategory,
         monthlyData,
       },

@@ -108,7 +108,7 @@ export interface DashboardData {
   balance: number;
   totalIncome: number;
   totalExpense: number;
-  recentTransactions: Transaction[];
+  transactions: Transaction[];
   expensesByCategory: CategorySummary[];
   monthlyData: MonthlyData[];
 }
