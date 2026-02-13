@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { TrendingUp } from "lucide-react";
 import { LoginForm } from "@/modules/auth/components/LoginForm";
+import { ThemeToggle } from "@/common/components/ThemeToggle";
 
 export default function LoginPage() {
   return (
@@ -27,7 +28,10 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="flex items-center justify-center bg-background px-4 py-12">
+      <div className="flex items-center justify-center bg-background px-4 py-12 relative">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle className="size-9" />
+        </div>
         <div className="w-full max-w-md space-y-6">
           <div className="flex items-center gap-2 lg:hidden justify-center mb-4">
             <Link href="/" className="flex items-center gap-2">

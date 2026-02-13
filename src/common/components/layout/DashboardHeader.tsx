@@ -1,9 +1,7 @@
 "use client";
 
-import { useTheme } from "@/common/contexts/ThemeContext";
-import { Moon, Sun, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { Button } from "@/common/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/common/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/common/components/ui/avatar";
+import { ThemeToggle } from "@/common/components/ThemeToggle";
 import { getInitials } from "@/lib/utils";
 
 interface DashboardHeaderProps {
@@ -19,22 +18,9 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ userName, userEmail }: DashboardHeaderProps) {
-  const { theme, toggleTheme } = useTheme();
-
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleTheme}
-        className="size-9"
-      >
-        {theme === "dark" ? (
-          <Sun className="size-4" />
-        ) : (
-          <Moon className="size-4" />
-        )}
-      </Button>
+      <ThemeToggle className="size-9" />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
