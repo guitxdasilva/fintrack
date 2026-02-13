@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 import { z } from "zod";
 
 const createCategorySchema = z.object({
@@ -20,19 +19,6 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
-
-    const count = await prisma.category.count({
-      where: { userId: session.user.id },
-    });
-
-    if (count === 0) {
-      await prisma.category.createMany({
-        data: DEFAULT_CATEGORIES.map((cat) => ({
-          ...cat,
-          userId: session.user!.id!,
-        })),
-      });
-    }
 
     const where: Record<string, unknown> = {
       userId: session.user.id,
