@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { TransactionList } from "@/modules/transactions/components/TransactionList";
 import { TransactionForm } from "@/modules/transactions/components/TransactionForm";
@@ -83,6 +83,15 @@ export default function TransactionsPage() {
     setFormOpen(true);
   }
 
+  function handleExportCSV() {
+    const params = new URLSearchParams();
+    if (filters.type !== "ALL") params.set("type", filters.type);
+    if (filters.categoryId) params.set("categoryId", filters.categoryId);
+    if (filters.search) params.set("search", filters.search);
+
+    window.open(`/api/transactions/export?${params.toString()}`, "_blank");
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -92,10 +101,16 @@ export default function TransactionsPage() {
             Gerencie suas receitas e despesas
           </p>
         </div>
-        <Button onClick={handleNewTransaction} size="lg">
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Transação
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleExportCSV} variant="outline" size="lg">
+            <Download className="mr-2 h-4 w-4" />
+            Exportar CSV
+          </Button>
+          <Button onClick={handleNewTransaction} size="lg">
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Transação
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card p-4 shadow-sm">
