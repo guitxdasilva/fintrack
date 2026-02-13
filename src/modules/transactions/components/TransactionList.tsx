@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle, Check, Circle, CheckCircle2, Loader2, Pin } from "lucide-react";
+import { Pencil, Trash2, ArrowLeftRight, Check, Circle, CheckCircle2, Loader2, Pin } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -45,6 +45,8 @@ export function TransactionList({
   const [deleting, setDeleting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   function toggleSelection(id: string) {
     setSelectedIds((prev) => {
@@ -56,16 +58,23 @@ export function TransactionList({
   }
 
   async function handleConfirmPaid() {
+    const expenseIds = Array.from(selectedIds).filter((id) =>
+      transactions.find((t) => t.id === id && t.type === "EXPENSE")
+    );
+    if (expenseIds.length === 0) {
+      toast.error("Selecione despesas para marcar como pagas");
+      return;
+    }
     setConfirming(true);
     try {
       const results = await Promise.all(
-        Array.from(selectedIds).map((id) =>
+        expenseIds.map((id) =>
           fetch(`/api/transactions/${id}/toggle-paid`, { method: "PATCH" })
         )
       );
       const allOk = results.every((r) => r.ok);
       if (allOk) {
-        toast.success(`${selectedIds.size} transação(ões) atualizada(s)`);
+        toast.success(`${expenseIds.length} transação(ões) atualizada(s)`);
       } else {
         toast.error("Erro ao atualizar algumas transações");
       }
@@ -75,6 +84,30 @@ export function TransactionList({
       toast.error("Erro ao atualizar transações");
     } finally {
       setConfirming(false);
+    }
+  }
+
+  async function handleBulkDelete() {
+    setBulkDeleting(true);
+    try {
+      const results = await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/transactions/${id}`, { method: "DELETE" })
+        )
+      );
+      const allOk = results.every((r) => r.ok);
+      if (allOk) {
+        toast.success(`${selectedIds.size} transação(ões) excluída(s)`);
+      } else {
+        toast.error("Erro ao excluir algumas transações");
+      }
+      setSelectedIds(new Set());
+      setShowBulkDeleteDialog(false);
+      onDelete();
+    } catch {
+      toast.error("Erro ao excluir transações");
+    } finally {
+      setBulkDeleting(false);
     }
   }
 
@@ -148,25 +181,19 @@ export function TransactionList({
               return (
               <TableRow key={transaction.id} className={`${transaction.paid ? "opacity-60" : ""} ${isSelected ? "bg-primary/5" : ""}`}>
                 <TableCell>
-                  {isExpense ? (
-                    <button
-                      className="h-7 w-7 flex items-center justify-center rounded-md transition-colors hover:bg-muted"
-                      onClick={() => toggleSelection(transaction.id)}
-                      title={transaction.paid ? "Desmarcar como pago" : "Selecionar para marcar como pago"}
-                    >
-                      {transaction.paid ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      ) : isSelected ? (
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                      ) : (
-                        <Circle className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                  ) : (
-                    <span className="h-7 w-7 flex items-center justify-center">
-                      <span className="h-4 w-4" />
-                    </span>
-                  )}
+                  <button
+                    className="h-7 w-7 flex items-center justify-center rounded-md transition-colors hover:bg-muted"
+                    onClick={() => toggleSelection(transaction.id)}
+                    title={isSelected ? "Desmarcar" : "Selecionar"}
+                  >
+                    {isExpense && transaction.paid ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    ) : isSelected ? (
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
                 </TableCell>
                 <TableCell className="font-medium">
                   <span className="flex items-center gap-1.5">
@@ -264,14 +291,14 @@ export function TransactionList({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedIds(new Set())}
-                disabled={confirming}
+                disabled={confirming || bulkDeleting}
               >
                 Cancelar
               </Button>
               <Button
                 size="sm"
                 onClick={handleConfirmPaid}
-                disabled={confirming}
+                disabled={confirming || bulkDeleting}
                 className="gap-1.5"
               >
                 {confirming ? (
@@ -279,7 +306,17 @@ export function TransactionList({
                 ) : (
                   <Check className="h-3.5 w-3.5" />
                 )}
-                Confirmar
+                Marcar Pago
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setShowBulkDeleteDialog(true)}
+                disabled={confirming || bulkDeleting}
+                className="gap-1.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Excluir
               </Button>
             </div>
           </div>
@@ -295,31 +332,29 @@ export function TransactionList({
             key={transaction.id}
             className={`flex items-center gap-3 p-4 ${transaction.paid ? "opacity-60" : ""} ${isSelected ? "bg-primary/5" : ""}`}
           >
-            {isExpense ? (
-              <button
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
-                  transaction.paid
-                    ? "bg-emerald-500/10"
-                    : isSelected
-                      ? "bg-primary/10"
-                      : "bg-red-500/10"
-                }`}
-                onClick={() => toggleSelection(transaction.id)}
-                title={transaction.paid ? "Desmarcar como pago" : "Selecionar"}
-              >
-                {transaction.paid ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                ) : isSelected ? (
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
-                ) : (
-                  <Circle className="h-5 w-5 text-red-400" />
-                )}
-              </button>
-            ) : (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
-              </div>
-            )}
+            <button
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+                isExpense && transaction.paid
+                  ? "bg-emerald-500/10"
+                  : isSelected
+                    ? "bg-primary/10"
+                    : isExpense
+                      ? "bg-red-500/10"
+                      : "bg-emerald-500/10"
+              }`}
+              onClick={() => toggleSelection(transaction.id)}
+              title={isSelected ? "Desmarcar" : "Selecionar"}
+            >
+              {isExpense && transaction.paid ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              ) : isSelected ? (
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+              ) : isExpense ? (
+                <Circle className="h-5 w-5 text-red-400" />
+              ) : (
+                <Circle className="h-5 w-5 text-emerald-400" />
+              )}
+            </button>
 
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
@@ -400,14 +435,14 @@ export function TransactionList({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedIds(new Set())}
-                disabled={confirming}
+                disabled={confirming || bulkDeleting}
               >
                 Cancelar
               </Button>
               <Button
                 size="sm"
                 onClick={handleConfirmPaid}
-                disabled={confirming}
+                disabled={confirming || bulkDeleting}
                 className="gap-1.5"
               >
                 {confirming ? (
@@ -415,7 +450,16 @@ export function TransactionList({
                 ) : (
                   <Check className="h-3.5 w-3.5" />
                 )}
-                Confirmar
+                Pago
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setShowBulkDeleteDialog(true)}
+                disabled={confirming || bulkDeleting}
+                className="gap-1.5"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
@@ -446,6 +490,37 @@ export function TransactionList({
               disabled={deleting}
             >
               {deleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk delete confirmation dialog */}
+      <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Excluir transações</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir {selectedIds.size} transação(ões) selecionada(s)?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowBulkDeleteDialog(false)}
+              disabled={bulkDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+            >
+              {bulkDeleting ? "Excluindo..." : `Excluir ${selectedIds.size}`}
             </Button>
           </div>
         </DialogContent>

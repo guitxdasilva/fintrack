@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
+    const monthParam = searchParams.get("month");
+    const yearParam = searchParams.get("year");
 
     const where: Record<string, unknown> = {
       userId: session.user.id,
@@ -46,7 +48,13 @@ export async function GET(request: NextRequest) {
       where.description = { contains: search, mode: "insensitive" };
     }
 
-    if (startDate || endDate) {
+    if (monthParam !== null && yearParam !== null) {
+      const m = parseInt(monthParam);
+      const y = parseInt(yearParam);
+      const start = new Date(y, m, 1);
+      const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
+      where.date = { gte: start, lte: end };
+    } else if (startDate || endDate) {
       where.date = {};
       if (startDate) {
         (where.date as Record<string, unknown>).gte = new Date(startDate);

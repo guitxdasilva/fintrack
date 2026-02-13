@@ -32,6 +32,8 @@ export default function TransactionsPage() {
     type: "ALL",
     categoryId: "",
     search: "",
+    month: new Date().getMonth(),
+    year: new Date().getFullYear(),
   });
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationData>({
@@ -48,6 +50,8 @@ export default function TransactionsPage() {
       if (filters.type !== "ALL") params.set("type", filters.type);
       if (filters.categoryId) params.set("categoryId", filters.categoryId);
       if (filters.search) params.set("search", filters.search);
+      params.set("month", String(filters.month));
+      params.set("year", String(filters.year));
       params.set("page", String(page));
       params.set("limit", "10");
 
@@ -92,6 +96,8 @@ export default function TransactionsPage() {
     if (filters.type !== "ALL") params.set("type", filters.type);
     if (filters.categoryId) params.set("categoryId", filters.categoryId);
     if (filters.search) params.set("search", filters.search);
+    params.set("month", String(filters.month));
+    params.set("year", String(filters.year));
 
     window.open(`/api/transactions/export?${params.toString()}`, "_blank");
   }

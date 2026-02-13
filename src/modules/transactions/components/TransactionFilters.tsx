@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, X } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { Input } from "@/common/components/ui/input";
 import { Button } from "@/common/components/ui/button";
 import {
@@ -22,14 +22,19 @@ export interface FilterValues {
   type: TransactionType | "ALL";
   categoryId: string;
   search: string;
+  month: number;
+  year: number;
 }
 
 export function TransactionFilters({
   onFilterChange,
 }: TransactionFiltersProps) {
+  const now = new Date();
   const [type, setType] = useState<TransactionType | "ALL">("ALL");
   const [categoryId, setCategoryId] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear] = useState(now.getFullYear());
   const [categories, setCategories] = useState<Category[]>([]);
 
   const debouncedSearch = useDebounce(search, 300);
@@ -57,20 +62,65 @@ export function TransactionFilters({
       type,
       categoryId: categoryId === "ALL" ? "" : categoryId,
       search: debouncedSearch,
+      month,
+      year,
     });
-  }, [type, categoryId, debouncedSearch, onFilterChange]);
+  }, [type, categoryId, debouncedSearch, month, year, onFilterChange]);
+
+  const MONTH_NAMES = [
+    "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+    "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+  ];
+
+  function goToPreviousMonth() {
+    if (month === 0) {
+      setMonth(11);
+      setYear((y) => y - 1);
+    } else {
+      setMonth((m) => m - 1);
+    }
+  }
+
+  function goToNextMonth() {
+    if (month === 11) {
+      setMonth(0);
+      setYear((y) => y + 1);
+    } else {
+      setMonth((m) => m + 1);
+    }
+  }
 
   function handleClearFilters() {
     setType("ALL");
     setCategoryId("ALL");
     setSearch("");
+    setMonth(now.getMonth());
+    setYear(now.getFullYear());
   }
 
   const hasActiveFilters =
-    type !== "ALL" || categoryId !== "ALL" || search !== "";
+    type !== "ALL" || categoryId !== "ALL" || search !== "" || month !== now.getMonth() || year !== now.getFullYear();
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col gap-3">
+      {/* Month navigator */}
+      <div className="flex items-center justify-center gap-2">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousMonth}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex items-center gap-1.5 rounded-md border px-3 py-1.5 min-w-[140px] justify-center">
+          <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-medium">
+            {MONTH_NAMES[month]} {year}
+          </span>
+        </div>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextMonth}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Other filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -125,6 +175,7 @@ export function TransactionFilters({
           <X className="h-4 w-4" />
         </Button>
       )}
+      </div>
     </div>
   );
 }
