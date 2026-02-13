@@ -3,19 +3,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { ArrowDownCircle, ArrowUpCircle, Wallet } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface BalanceCardProps {
   balance: number;
   totalIncome: number;
   totalExpense: number;
   isLoading?: boolean;
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
 }
 
 export function BalanceCard({

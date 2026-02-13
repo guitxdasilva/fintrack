@@ -12,18 +12,12 @@ import {
 } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { Badge } from "@/common/components/ui/badge";
+import { formatCurrency } from "@/lib/utils";
 import type { Transaction } from "@/types";
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
   isLoading?: boolean;
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
 }
 
 export function RecentTransactions({

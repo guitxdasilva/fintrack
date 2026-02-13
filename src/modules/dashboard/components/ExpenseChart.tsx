@@ -10,18 +10,12 @@ import {
   CardTitle,
 } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
+import { formatCurrency } from "@/lib/utils";
 import type { CategorySummary } from "@/types";
 
 interface ExpenseChartProps {
   data: CategorySummary[];
   isLoading?: boolean;
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value);
 }
 
 export function ExpenseChart({ data, isLoading }: ExpenseChartProps) {

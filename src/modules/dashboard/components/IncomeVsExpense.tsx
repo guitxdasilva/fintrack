@@ -18,19 +18,12 @@ import {
   CardTitle,
 } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
+import { formatCurrency } from "@/lib/utils";
 import type { MonthlyData } from "@/types";
 
 interface IncomeVsExpenseProps {
   data: MonthlyData[];
   isLoading?: boolean;
-}
-
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-    notation: "compact",
-  }).format(value);
 }
 
 export function IncomeVsExpense({ data, isLoading }: IncomeVsExpenseProps) {

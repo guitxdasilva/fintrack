@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -10,6 +11,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/common/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/common/components/ui/dialog";
 import { Badge } from "@/common/components/ui/badge";
 import { Button } from "@/common/components/ui/button";
 import { Skeleton } from "@/common/components/ui/skeleton";
@@ -29,9 +37,15 @@ export function TransactionList({
   onEdit,
   onDelete,
 }: TransactionListProps) {
-  async function handleDelete(id: string) {
+  const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+
     try {
-      const res = await fetch(`/api/transactions/${id}`, {
+      const res = await fetch(`/api/transactions/${deleteTarget.id}`, {
         method: "DELETE",
       });
 
@@ -42,9 +56,12 @@ export function TransactionList({
       }
 
       toast.success("Transação excluída com sucesso");
+      setDeleteTarget(null);
       onDelete();
     } catch {
       toast.error("Erro ao excluir transação");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -120,7 +137,7 @@ export function TransactionList({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-red-500 hover:text-red-600"
-                      onClick={() => handleDelete(transaction.id)}
+                      onClick={() => setDeleteTarget(transaction)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -188,7 +205,7 @@ export function TransactionList({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 text-red-500"
-                  onClick={() => handleDelete(transaction.id)}
+                  onClick={() => setDeleteTarget(transaction)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -197,6 +214,35 @@ export function TransactionList({
           </div>
         ))}
       </div>
+
+      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Excluir transação</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir a transação &quot;{deleteTarget?.description}&quot;?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setDeleteTarget(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
