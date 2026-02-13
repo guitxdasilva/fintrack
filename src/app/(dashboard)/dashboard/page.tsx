@@ -119,6 +119,8 @@ export default function DashboardPage() {
         balance={data?.balance ?? 0}
         totalIncome={data?.totalIncome ?? 0}
         totalExpense={data?.totalExpense ?? 0}
+        totalPaid={data?.totalPaid ?? 0}
+        totalPending={data?.totalPending ?? 0}
         isLoading={isLoading}
       />
 

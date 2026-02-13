@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle, Check, Circle } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -31,6 +31,7 @@ interface TransactionListProps {
   loading: boolean;
   onEdit: (transaction: Transaction) => void;
   onDelete: () => void;
+  onTogglePaid?: (transaction: Transaction) => void;
 }
 
 export function TransactionList({
@@ -38,9 +39,30 @@ export function TransactionList({
   loading,
   onEdit,
   onDelete,
+  onTogglePaid,
 }: TransactionListProps) {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  async function handleTogglePaid(transaction: Transaction) {
+    setTogglingId(transaction.id);
+    try {
+      const res = await fetch(`/api/transactions/${transaction.id}/toggle-paid`, {
+        method: "PATCH",
+      });
+      if (!res.ok) {
+        toast.error("Erro ao atualizar status");
+        return;
+      }
+      toast.success(transaction.paid ? "Marcado como pendente" : "Marcado como pago");
+      onTogglePaid?.(transaction);
+    } catch {
+      toast.error("Erro ao atualizar status");
+    } finally {
+      setTogglingId(null);
+    }
+  }
 
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
@@ -95,6 +117,7 @@ export function TransactionList({
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">Status</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Pagamento</TableHead>
@@ -106,7 +129,23 @@ export function TransactionList({
           </TableHeader>
           <TableBody>
             {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
+              <TableRow key={transaction.id} className={transaction.paid ? "opacity-60" : ""}>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    disabled={togglingId === transaction.id}
+                    onClick={() => handleTogglePaid(transaction)}
+                    title={transaction.paid ? "Marcar como pendente" : "Marcar como pago"}
+                  >
+                    {transaction.paid ? (
+                      <Check className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <Circle className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </TableCell>
                 <TableCell className="font-medium">
                   {transaction.description}
                 </TableCell>
@@ -188,21 +227,34 @@ export function TransactionList({
         {transactions.map((transaction) => (
           <div
             key={transaction.id}
-            className="flex items-center gap-3 p-4"
+            className={`flex items-center gap-3 p-4 ${transaction.paid ? "opacity-60" : ""}`}
           >
-            <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                transaction.type === "INCOME"
-                  ? "bg-emerald-500/10"
-                  : "bg-red-500/10"
-              }`}
+            <button
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors"
+              disabled={togglingId === transaction.id}
+              onClick={() => handleTogglePaid(transaction)}
+              title={transaction.paid ? "Marcar como pendente" : "Marcar como pago"}
             >
-              {transaction.type === "INCOME" ? (
-                <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
+              {transaction.paid ? (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
+                  <Check className="h-5 w-5 text-emerald-500" />
+                </div>
               ) : (
-                <ArrowDownCircle className="h-5 w-5 text-red-500" />
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full ${
+                    transaction.type === "INCOME"
+                      ? "bg-emerald-500/10"
+                      : "bg-red-500/10"
+                  }`}
+                >
+                  {transaction.type === "INCOME" ? (
+                    <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
+                  ) : (
+                    <ArrowDownCircle className="h-5 w-5 text-red-500" />
+                  )}
+                </div>
               )}
-            </div>
+            </button>
 
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">

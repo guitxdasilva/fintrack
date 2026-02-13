@@ -65,6 +65,8 @@ model Transaction {
   installments       Int?
   currentInstallment Int?
   installmentGroupId String?
+  paid               Boolean   @default(false)
+  paidAt             DateTime?
 
   @@index([userId])
   @@index([date])

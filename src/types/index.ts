@@ -45,6 +45,8 @@ export interface Transaction {
   installments?: number | null;
   currentInstallment?: number | null;
   installmentGroupId?: string | null;
+  paid?: boolean;
+  paidAt?: string | null;
 }
 
 export interface CreateTransactionDTO {
@@ -117,6 +119,8 @@ export interface DashboardData {
   balance: number;
   totalIncome: number;
   totalExpense: number;
+  totalPaid: number;
+  totalPending: number;
   transactions: Transaction[];
   expensesByCategory: CategorySummary[];
   monthlyData: MonthlyData[];

@@ -10,6 +10,7 @@ import {
   CreditCard,
   ChevronRight,
   CalendarRange,
+  Check,
 } from "lucide-react";
 import {
   Card,
@@ -254,7 +255,13 @@ export function MonthTransactions({
                       {group.cardName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {group.transactions.length} transação(ões) no cartão
+                      {group.transactions.length} transação(ões)
+                      {group.transactions.some((t) => t.type === "EXPENSE") && (
+                        <>
+                          {" · "}
+                          {group.transactions.filter((t) => t.type === "EXPENSE" && t.paid).length} paga(s)
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -272,16 +279,20 @@ export function MonthTransactions({
             return (
               <div
                 key={transaction.id}
-                className="flex items-center gap-4 rounded-lg p-3"
+                className={`flex items-center gap-4 rounded-lg p-3 ${transaction.paid ? "opacity-60" : ""}`}
               >
                 <div
                   className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                    transaction.type === "INCOME"
+                    transaction.paid
                       ? "bg-emerald-500/10"
-                      : "bg-red-500/10"
+                      : transaction.type === "INCOME"
+                        ? "bg-emerald-500/10"
+                        : "bg-red-500/10"
                   }`}
                 >
-                  {transaction.type === "INCOME" ? (
+                  {transaction.paid ? (
+                    <Check className="h-5 w-5 text-emerald-500" />
+                  ) : transaction.type === "INCOME" ? (
                     <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
                   ) : (
                     <ArrowDownCircle className="h-5 w-5 text-red-500" />
@@ -432,16 +443,20 @@ export function MonthTransactions({
                 .map((t) => (
                 <div
                   key={t.id}
-                  className="flex items-center gap-3 rounded-lg border p-3"
+                  className={`flex items-center gap-3 rounded-lg border p-3 ${t.paid ? "opacity-60" : ""}`}
                 >
                   <div
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                      t.type === "INCOME"
+                      t.paid
                         ? "bg-emerald-500/10"
-                        : "bg-red-500/10"
+                        : t.type === "INCOME"
+                          ? "bg-emerald-500/10"
+                          : "bg-red-500/10"
                     }`}
                   >
-                    {t.type === "INCOME" ? (
+                    {t.paid ? (
+                      <Check className="h-4 w-4 text-emerald-500" />
+                    ) : t.type === "INCOME" ? (
                       <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
                     ) : (
                       <ArrowDownCircle className="h-4 w-4 text-red-500" />

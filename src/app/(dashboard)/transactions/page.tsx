@@ -129,6 +129,7 @@ export default function TransactionsPage() {
           loading={loading}
           onEdit={handleEdit}
           onDelete={fetchTransactions}
+          onTogglePaid={fetchTransactions}
         />
         <Pagination
           page={pagination.page}

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       orderBy: { date: "desc" },
     });
 
-    const header = "Data,Tipo,Categoria,Pagamento,Cartão,Tipo Cartão,Parcela,Descrição,Valor";
+    const header = "Data,Tipo,Categoria,Pagamento,Cartão,Tipo Cartão,Parcela,Descrição,Valor,Pago";
     const paymentTypeLabels: Record<string, string> = {
       CASH: "Dinheiro",
       PIX: "PIX",
@@ -66,7 +66,8 @@ export async function GET(request: NextRequest) {
       const installment = t.installments ? `${t.currentInstallment}/${t.installments}` : "";
       const description = `"${t.description.replace(/"/g, '""')}"`;  
       const amount = t.amount.toFixed(2).replace(".", ",");
-      return `${date},${type},${category},${paymentType},${cardName},${cardType},${installment},${description},${amount}`;
+      const paid = t.paid ? "Sim" : "Não";
+      return `${date},${type},${category},${paymentType},${cardName},${cardType},${installment},${description},${amount},${paid}`;
     });
 
     const csv = [header, ...rows].join("\n");

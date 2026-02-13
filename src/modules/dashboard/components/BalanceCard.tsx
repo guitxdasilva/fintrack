@@ -2,13 +2,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
-import { ArrowDownCircle, ArrowUpCircle, Wallet } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Wallet, CheckCircle2, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface BalanceCardProps {
   balance: number;
   totalIncome: number;
   totalExpense: number;
+  totalPaid: number;
+  totalPending: number;
   isLoading?: boolean;
 }
 
@@ -16,12 +18,14 @@ export function BalanceCard({
   balance,
   totalIncome,
   totalExpense,
+  totalPaid,
+  totalPending,
   isLoading,
 }: BalanceCardProps) {
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
           <Card key={i}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <Skeleton className="h-4 w-24" />
@@ -62,10 +66,26 @@ export function BalanceCard({
       iconColor: "text-red-500",
       description: "Total de despesas no mês",
     },
+    {
+      title: "Pago",
+      value: totalPaid,
+      icon: CheckCircle2,
+      color: "text-emerald-500",
+      iconColor: "text-emerald-500",
+      description: "Despesas já pagas",
+    },
+    {
+      title: "Pendente",
+      value: totalPending,
+      icon: Clock,
+      color: "text-amber-500",
+      iconColor: "text-amber-500",
+      description: "Despesas a pagar",
+    },
   ];
 
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
       {cards.map((card) => (
         <Card key={card.title}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">

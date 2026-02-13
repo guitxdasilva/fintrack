@@ -89,6 +89,8 @@ export async function POST(request: NextRequest) {
           paymentType: t.paymentType,
           cardId: t.cardId,
           cardType: t.cardType,
+          paid: false,
+          paidAt: null,
           userId: session.user!.id!,
         };
       }),

@@ -61,6 +61,14 @@ export async function GET(request: NextRequest) {
       .filter((t) => t.type === "EXPENSE")
       .reduce((sum, t) => sum + t.amount, 0);
 
+    const totalPaid = selectedMonthTransactions
+      .filter((t) => t.type === "EXPENSE" && t.paid)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const totalPending = selectedMonthTransactions
+      .filter((t) => t.type === "EXPENSE" && !t.paid)
+      .reduce((sum, t) => sum + t.amount, 0);
+
     const balance = totalIncome - totalExpense;
 
     const expenseMap = new Map<string, { category: string; color: string; total: number }>();
@@ -124,6 +132,8 @@ export async function GET(request: NextRequest) {
         balance,
         totalIncome,
         totalExpense,
+        totalPaid,
+        totalPending,
         transactions: allMonthTransactions,
         expensesByCategory,
         monthlyData,
