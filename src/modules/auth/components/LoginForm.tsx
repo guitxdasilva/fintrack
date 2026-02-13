@@ -57,22 +57,35 @@ export function LoginForm() {
 
     setLoading(true);
 
-    const signInResult = await signIn("credentials", {
-      email: result.data.email,
-      password: result.data.password,
-      redirect: false,
-    });
+    try {
+      const signInResult = await signIn("credentials", {
+        email: result.data.email,
+        password: result.data.password,
+        redirect: false,
+        callbackUrl: "/dashboard",
+      });
 
-    setLoading(false);
+      if (signInResult?.error || !signInResult?.ok) {
+        setError("Email ou senha incorretos");
+        toast.error("Email ou senha incorretos");
+        return;
+      }
 
-    if (signInResult?.error) {
-      setError("Email ou senha incorretos");
-      toast.error("Email ou senha incorretos");
-      return;
+      toast.success("Login realizado!");
+      const targetUrl = signInResult?.url ?? "/dashboard";
+      router.replace(targetUrl);
+      router.refresh();
+      setTimeout(() => {
+        if (typeof window !== "undefined" && window.location.pathname === "/login") {
+          window.location.href = "/dashboard";
+        }
+      }, 150);
+    } catch {
+      setError("Não foi possível fazer login agora");
+      toast.error("Não foi possível fazer login agora");
+    } finally {
+      setLoading(false);
     }
-
-    toast.success("Login realizado!");
-    router.push("/dashboard");
   };
 
   return (
