@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -11,11 +11,22 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const { searchParams } = new URL(request.url);
+    const paramMonth = searchParams.get("month");
+    const paramYear = searchParams.get("year");
 
-    const [currentMonthTransactions, allTransactions, recentTransactions] =
+    const now = new Date();
+    const targetYear = paramYear ? parseInt(paramYear) : now.getFullYear();
+    const targetMonth = paramMonth ? parseInt(paramMonth) : now.getMonth();
+
+    const startOfMonth = new Date(targetYear, targetMonth, 1);
+    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59);
+
+    // Last 6 months range for the chart (relative to selected month)
+    const chartStart = new Date(targetYear, targetMonth - 5, 1);
+    const chartEnd = endOfMonth;
+
+    const [selectedMonthTransactions, chartTransactions, recentTransactions] =
       await Promise.all([
         prisma.transaction.findMany({
           where: {
@@ -25,23 +36,29 @@ export async function GET() {
           include: { category: true },
         }),
         prisma.transaction.findMany({
-          where: { userId },
+          where: {
+            userId,
+            date: { gte: chartStart, lte: chartEnd },
+          },
           include: { category: true },
           orderBy: { date: "desc" },
         }),
         prisma.transaction.findMany({
-          where: { userId },
+          where: {
+            userId,
+            date: { gte: startOfMonth, lte: endOfMonth },
+          },
           include: { category: true },
           orderBy: { date: "desc" },
           take: 5,
         }),
       ]);
 
-    const totalIncome = currentMonthTransactions
+    const totalIncome = selectedMonthTransactions
       .filter((t) => t.type === "INCOME")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const totalExpense = currentMonthTransactions
+    const totalExpense = selectedMonthTransactions
       .filter((t) => t.type === "EXPENSE")
       .reduce((sum, t) => sum + t.amount, 0);
 
@@ -49,7 +66,7 @@ export async function GET() {
 
     const expenseMap = new Map<string, { category: string; color: string; total: number }>();
 
-    currentMonthTransactions
+    selectedMonthTransactions
       .filter((t) => t.type === "EXPENSE")
       .forEach((t) => {
         const key = t.category.name;
@@ -79,12 +96,12 @@ export async function GET() {
     ];
 
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d = new Date(targetYear, targetMonth - i, 1);
       const key = `${monthNames[d.getMonth()]}/${d.getFullYear().toString().slice(2)}`;
       monthlyMap.set(key, { income: 0, expense: 0 });
     }
 
-    allTransactions.forEach((t) => {
+    chartTransactions.forEach((t) => {
       const d = new Date(t.date);
       const key = `${monthNames[d.getMonth()]}/${d.getFullYear().toString().slice(2)}`;
       const entry = monthlyMap.get(key);
