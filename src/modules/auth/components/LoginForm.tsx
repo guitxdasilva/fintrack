@@ -73,13 +73,7 @@ export function LoginForm() {
 
       toast.success("Login realizado!");
       const targetUrl = signInResult?.url ?? "/dashboard";
-      router.replace(targetUrl);
-      router.refresh();
-      setTimeout(() => {
-        if (typeof window !== "undefined" && window.location.pathname === "/login") {
-          window.location.href = "/dashboard";
-        }
-      }, 150);
+      window.location.assign(targetUrl);
     } catch {
       setError("Não foi possível fazer login agora");
       toast.error("Não foi possível fazer login agora");
