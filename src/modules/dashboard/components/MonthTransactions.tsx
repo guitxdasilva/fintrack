@@ -11,7 +11,11 @@ import {
   ChevronRight,
   CalendarRange,
   Check,
+  Circle,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -27,6 +31,7 @@ import {
 } from "@/common/components/ui/dialog";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { Badge } from "@/common/components/ui/badge";
+import { Button } from "@/common/components/ui/button";
 import { Separator } from "@/common/components/ui/separator";
 import { Spinner } from "@/common/components/ui/spinner";
 import { formatCurrency } from "@/lib/utils";
@@ -56,6 +61,7 @@ interface MonthTransactionsProps {
   month: number;
   year: number;
   isLoading?: boolean;
+  onDataChange?: () => void;
 }
 
 export function MonthTransactions({
@@ -63,10 +69,55 @@ export function MonthTransactions({
   month,
   year,
   isLoading,
+  onDataChange,
 }: MonthTransactionsProps) {
   const [selectedCard, setSelectedCard] = useState<CardGroup | null>(null);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [modalSelectedIds, setModalSelectedIds] = useState<Set<string>>(new Set());
+  const [confirming, setConfirming] = useState(false);
+
+  function toggleSelection(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleModalSelection(id: string) {
+    setModalSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleConfirmPaid(ids: Set<string>, clearFn: () => void) {
+    setConfirming(true);
+    try {
+      const results = await Promise.all(
+        Array.from(ids).map((id) =>
+          fetch(`/api/transactions/${id}/toggle-paid`, { method: "PATCH" })
+        )
+      );
+      const allOk = results.every((r) => r.ok);
+      if (allOk) {
+        toast.success(`${ids.size} transação(ões) atualizada(s)`);
+      } else {
+        toast.error("Erro ao atualizar algumas transações");
+      }
+      clearFn();
+      onDataChange?.();
+    } catch {
+      toast.error("Erro ao atualizar transações");
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   // Fetch invoice data when a card with closing day is selected
   const fetchInvoice = useCallback(
@@ -100,6 +151,7 @@ export function MonthTransactions({
   function handleCloseModal() {
     setSelectedCard(null);
     setInvoiceData(null);
+    setModalSelectedIds(new Set());
   }
 
   // Use invoice transactions if available, otherwise use group transactions
@@ -276,28 +328,38 @@ export function MonthTransactions({
             }
 
             const transaction = item.data;
+            const isExpense = transaction.type === "EXPENSE";
+            const isSelected = selectedIds.has(transaction.id);
             return (
               <div
                 key={transaction.id}
-                className={`flex items-center gap-4 rounded-lg p-3 ${transaction.paid ? "opacity-60" : ""}`}
+                className={`flex items-center gap-4 rounded-lg p-3 ${transaction.paid ? "opacity-60" : ""} ${isSelected ? "bg-primary/5 ring-1 ring-primary/20 rounded-lg" : ""}`}
               >
-                <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                    transaction.paid
-                      ? "bg-emerald-500/10"
-                      : transaction.type === "INCOME"
+                {isExpense ? (
+                  <button
+                    onClick={() => toggleSelection(transaction.id)}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+                      transaction.paid
                         ? "bg-emerald-500/10"
-                        : "bg-red-500/10"
-                  }`}
-                >
-                  {transaction.paid ? (
-                    <Check className="h-5 w-5 text-emerald-500" />
-                  ) : transaction.type === "INCOME" ? (
+                        : isSelected
+                          ? "bg-primary/10"
+                          : "bg-red-500/10"
+                    }`}
+                    title={transaction.paid ? "Desmarcar como pago" : "Selecionar para marcar como pago"}
+                  >
+                    {transaction.paid ? (
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    ) : isSelected ? (
+                      <CheckCircle2 className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-red-400" />
+                    )}
+                  </button>
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
                     <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
-                  ) : (
-                    <ArrowDownCircle className="h-5 w-5 text-red-500" />
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div className="flex-1 min-w-0 space-y-1">
                   <p className="text-sm font-medium leading-none truncate">
@@ -334,6 +396,37 @@ export function MonthTransactions({
               </div>
             );
           })}
+          {/* Floating confirm bar */}
+          {selectedIds.size > 0 && (
+            <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t pt-3 pb-1 flex items-center justify-between gap-3">
+              <span className="text-sm text-muted-foreground">
+                {selectedIds.size} selecionada(s)
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                  disabled={confirming}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleConfirmPaid(selectedIds, () => setSelectedIds(new Set()))}
+                  disabled={confirming}
+                  className="gap-1.5"
+                >
+                  {confirming ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}
+                  Confirmar
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -440,28 +533,39 @@ export function MonthTransactions({
                   (a, b) =>
                     new Date(b.date).getTime() - new Date(a.date).getTime()
                 )
-                .map((t) => (
+                .map((t) => {
+                const isExp = t.type === "EXPENSE";
+                const isSel = modalSelectedIds.has(t.id);
+                return (
                 <div
                   key={t.id}
-                  className={`flex items-center gap-3 rounded-lg border p-3 ${t.paid ? "opacity-60" : ""}`}
+                  className={`flex items-center gap-3 rounded-lg border p-3 ${t.paid ? "opacity-60" : ""} ${isSel ? "ring-1 ring-primary/20 bg-primary/5" : ""}`}
                 >
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                      t.paid
-                        ? "bg-emerald-500/10"
-                        : t.type === "INCOME"
+                  {isExp ? (
+                    <button
+                      onClick={() => toggleModalSelection(t.id)}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
+                        t.paid
                           ? "bg-emerald-500/10"
-                          : "bg-red-500/10"
-                    }`}
-                  >
-                    {t.paid ? (
-                      <Check className="h-4 w-4 text-emerald-500" />
-                    ) : t.type === "INCOME" ? (
+                          : isSel
+                            ? "bg-primary/10"
+                            : "bg-red-500/10"
+                      }`}
+                      title={t.paid ? "Desmarcar como pago" : "Selecionar"}
+                    >
+                      {t.paid ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      ) : isSel ? (
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-red-400" />
+                      )}
+                    </button>
+                  ) : (
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
                       <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <ArrowDownCircle className="h-4 w-4 text-red-500" />
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   <div className="flex-1 min-w-0 space-y-0.5">
                     <p className="text-sm font-medium truncate">
@@ -500,9 +604,42 @@ export function MonthTransactions({
                     {formatCurrency(t.amount)}
                   </p>
                 </div>
-              ))
+              );
+              })
             )}
           </div>
+
+          {/* Modal confirm bar */}
+          {modalSelectedIds.size > 0 && (
+            <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t pt-3 pb-1 flex items-center justify-between gap-3">
+              <span className="text-sm text-muted-foreground">
+                {modalSelectedIds.size} selecionada(s)
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setModalSelectedIds(new Set())}
+                  disabled={confirming}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleConfirmPaid(modalSelectedIds, () => setModalSelectedIds(new Set()))}
+                  disabled={confirming}
+                  className="gap-1.5"
+                >
+                  {confirming ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}
+                  Confirmar
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

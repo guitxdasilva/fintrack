@@ -134,6 +134,7 @@ export default function DashboardPage() {
           month={month}
           year={year}
           isLoading={isLoading}
+          onDataChange={fetchDashboard}
         />
       </div>
 

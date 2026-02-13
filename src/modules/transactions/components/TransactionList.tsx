@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle, Check, Circle } from "lucide-react";
+import { Pencil, Trash2, ArrowLeftRight, ArrowUpCircle, ArrowDownCircle, Check, Circle, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -31,7 +31,7 @@ interface TransactionListProps {
   loading: boolean;
   onEdit: (transaction: Transaction) => void;
   onDelete: () => void;
-  onTogglePaid?: (transaction: Transaction) => void;
+  onTogglePaid?: () => void;
 }
 
 export function TransactionList({
@@ -43,24 +43,38 @@ export function TransactionList({
 }: TransactionListProps) {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirming, setConfirming] = useState(false);
 
-  async function handleTogglePaid(transaction: Transaction) {
-    setTogglingId(transaction.id);
+  function toggleSelection(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function handleConfirmPaid() {
+    setConfirming(true);
     try {
-      const res = await fetch(`/api/transactions/${transaction.id}/toggle-paid`, {
-        method: "PATCH",
-      });
-      if (!res.ok) {
-        toast.error("Erro ao atualizar status");
-        return;
+      const results = await Promise.all(
+        Array.from(selectedIds).map((id) =>
+          fetch(`/api/transactions/${id}/toggle-paid`, { method: "PATCH" })
+        )
+      );
+      const allOk = results.every((r) => r.ok);
+      if (allOk) {
+        toast.success(`${selectedIds.size} transação(ões) atualizada(s)`);
+      } else {
+        toast.error("Erro ao atualizar algumas transações");
       }
-      toast.success(transaction.paid ? "Marcado como pendente" : "Marcado como pago");
-      onTogglePaid?.(transaction);
+      setSelectedIds(new Set());
+      onTogglePaid?.();
     } catch {
-      toast.error("Erro ao atualizar status");
+      toast.error("Erro ao atualizar transações");
     } finally {
-      setTogglingId(null);
+      setConfirming(false);
     }
   }
 
@@ -128,23 +142,31 @@ export function TransactionList({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id} className={transaction.paid ? "opacity-60" : ""}>
+            {transactions.map((transaction) => {
+              const isExpense = transaction.type === "EXPENSE";
+              const isSelected = selectedIds.has(transaction.id);
+              return (
+              <TableRow key={transaction.id} className={`${transaction.paid ? "opacity-60" : ""} ${isSelected ? "bg-primary/5" : ""}`}>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    disabled={togglingId === transaction.id}
-                    onClick={() => handleTogglePaid(transaction)}
-                    title={transaction.paid ? "Marcar como pendente" : "Marcar como pago"}
-                  >
-                    {transaction.paid ? (
-                      <Check className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <Circle className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
+                  {isExpense ? (
+                    <button
+                      className="h-7 w-7 flex items-center justify-center rounded-md transition-colors hover:bg-muted"
+                      onClick={() => toggleSelection(transaction.id)}
+                      title={transaction.paid ? "Desmarcar como pago" : "Selecionar para marcar como pago"}
+                    >
+                      {transaction.paid ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      ) : isSelected ? (
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Circle className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  ) : (
+                    <span className="h-7 w-7 flex items-center justify-center">
+                      <span className="h-4 w-4" />
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="font-medium">
                   {transaction.description}
@@ -218,43 +240,78 @@ export function TransactionList({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
+
+        {/* Desktop confirm bar */}
+        {selectedIds.size > 0 && (
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size} selecionada(s)
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+                disabled={confirming}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmPaid}
+                disabled={confirming}
+                className="gap-1.5"
+              >
+                {confirming ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Check className="h-3.5 w-3.5" />
+                )}
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="md:hidden divide-y">
-        {transactions.map((transaction) => (
+        {transactions.map((transaction) => {
+          const isExpense = transaction.type === "EXPENSE";
+          const isSelected = selectedIds.has(transaction.id);
+          return (
           <div
             key={transaction.id}
-            className={`flex items-center gap-3 p-4 ${transaction.paid ? "opacity-60" : ""}`}
+            className={`flex items-center gap-3 p-4 ${transaction.paid ? "opacity-60" : ""} ${isSelected ? "bg-primary/5" : ""}`}
           >
-            <button
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors"
-              disabled={togglingId === transaction.id}
-              onClick={() => handleTogglePaid(transaction)}
-              title={transaction.paid ? "Marcar como pendente" : "Marcar como pago"}
-            >
-              {transaction.paid ? (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
-                  <Check className="h-5 w-5 text-emerald-500" />
-                </div>
-              ) : (
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                    transaction.type === "INCOME"
-                      ? "bg-emerald-500/10"
+            {isExpense ? (
+              <button
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
+                  transaction.paid
+                    ? "bg-emerald-500/10"
+                    : isSelected
+                      ? "bg-primary/10"
                       : "bg-red-500/10"
-                  }`}
-                >
-                  {transaction.type === "INCOME" ? (
-                    <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
-                  ) : (
-                    <ArrowDownCircle className="h-5 w-5 text-red-500" />
-                  )}
-                </div>
-              )}
-            </button>
+                }`}
+                onClick={() => toggleSelection(transaction.id)}
+                title={transaction.paid ? "Desmarcar como pago" : "Selecionar"}
+              >
+                {transaction.paid ? (
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                ) : isSelected ? (
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                ) : (
+                  <Circle className="h-5 w-5 text-red-400" />
+                )}
+              </button>
+            ) : (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
+              </div>
+            )}
 
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
@@ -315,7 +372,40 @@ export function TransactionList({
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
+
+        {/* Mobile confirm bar */}
+        {selectedIds.size > 0 && (
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size} selecionada(s)
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedIds(new Set())}
+                disabled={confirming}
+              >
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleConfirmPaid}
+                disabled={confirming}
+                className="gap-1.5"
+              >
+                {confirming ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Check className="h-3.5 w-3.5" />
+                )}
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
