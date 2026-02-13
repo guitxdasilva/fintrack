@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import {
@@ -31,12 +30,12 @@ const loginSchema = z.object({
 type FieldErrors = Partial<Record<keyof z.infer<typeof loginSchema>, string>>;
 
 export function LoginForm() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,15 +71,31 @@ export function LoginForm() {
       }
 
       toast.success("Login realizado!");
+      setLoading(false);
+      setRedirecting(true);
       const targetUrl = signInResult?.url ?? "/dashboard";
       window.location.assign(targetUrl);
     } catch {
       setError("Não foi possível fazer login agora");
       toast.error("Não foi possível fazer login agora");
-    } finally {
       setLoading(false);
     }
   };
+
+  if (redirecting) {
+    return (
+      <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
+        <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+          <CheckCircle2 className="h-12 w-12 text-emerald-500 animate-in zoom-in duration-300" />
+          <div className="text-center space-y-1">
+            <p className="text-lg font-semibold">Login realizado!</p>
+            <p className="text-sm text-muted-foreground">Redirecionando para o dashboard...</p>
+          </div>
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md border-0 shadow-none bg-transparent">

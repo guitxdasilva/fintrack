@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import {
@@ -45,7 +44,6 @@ type FormData = z.infer<typeof registerSchema>;
 type FieldErrors = Partial<Record<keyof FormData, string>>;
 
 export function RegisterForm() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,6 +51,7 @@ export function RegisterForm() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,17 +93,33 @@ export function RegisterForm() {
       redirect: false,
     });
 
-    setLoading(false);
-
     if (signInResult?.error) {
+      setLoading(false);
       setError("Conta criada, mas erro ao fazer login automático");
       toast.error("Erro ao fazer login automático");
       return;
     }
 
     toast.success("Conta criada com sucesso!");
-    router.push("/dashboard");
+    setLoading(false);
+    setRedirecting(true);
+    window.location.assign("/dashboard");
   };
+
+  if (redirecting) {
+    return (
+      <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
+        <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
+          <CheckCircle2 className="h-12 w-12 text-emerald-500 animate-in zoom-in duration-300" />
+          <div className="text-center space-y-1">
+            <p className="text-lg font-semibold">Conta criada!</p>
+            <p className="text-sm text-muted-foreground">Redirecionando para o dashboard...</p>
+          </div>
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full max-w-md border-0 shadow-none bg-transparent">
