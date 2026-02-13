@@ -163,7 +163,6 @@ export function MonthTransactions({
   const listItems: ListItem[] = [
     ...cardGroups.map((g) => ({ kind: "card" as const, data: g })),
     ...individualItems
-      .slice(0, 10)
       .map((t) => ({ kind: "transaction" as const, data: t })),
   ];
 
@@ -178,7 +177,7 @@ export function MonthTransactions({
               : `${individualItems.length} transação(ões)`}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-2 max-h-[420px] overflow-y-auto">
           {listItems.map((item) => {
             if (item.kind === "card") {
               const group = item.data;
@@ -267,12 +266,6 @@ export function MonthTransactions({
               </div>
             );
           })}
-
-          {individualItems.length > 10 && (
-            <p className="text-xs text-center text-muted-foreground pt-2">
-              e mais {individualItems.length - 10} transações avulsas...
-            </p>
-          )}
         </CardContent>
       </Card>
 
