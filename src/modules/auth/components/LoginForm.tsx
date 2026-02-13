@@ -67,6 +67,7 @@ export function LoginForm() {
       if (signInResult?.error || !signInResult?.ok) {
         setError("Email ou senha incorretos");
         toast.error("Email ou senha incorretos");
+        setLoading(false);
         return;
       }
 
