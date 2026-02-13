@@ -6,6 +6,8 @@ import { z } from "zod";
 const createCardSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome deve ter no máximo 50 caracteres"),
   icon: z.string().optional(),
+  closingDayType: z.enum(["FIXED", "BEFORE_END"]).nullable().optional(),
+  closingDayValue: z.number().int().min(1).max(31).nullable().optional(),
 });
 
 export async function GET() {
@@ -64,6 +66,8 @@ export async function POST(request: NextRequest) {
       data: {
         name: result.data.name,
         icon: result.data.icon || "💳",
+        closingDayType: result.data.closingDayType || null,
+        closingDayValue: result.data.closingDayValue ?? null,
         userId: session.user.id,
       },
     });

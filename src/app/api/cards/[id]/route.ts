@@ -6,6 +6,8 @@ import { z } from "zod";
 const updateCardSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(50, "Nome deve ter no máximo 50 caracteres").optional(),
   icon: z.string().optional(),
+  closingDayType: z.enum(["FIXED", "BEFORE_END"]).nullable().optional(),
+  closingDayValue: z.number().int().min(1).max(31).nullable().optional(),
 });
 
 export async function PUT(

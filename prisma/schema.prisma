@@ -104,10 +104,12 @@ model Goal {
 }
 
 model Card {
-  id          String   @id @default(cuid())
-  name        String
-  icon        String?
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  name            String
+  icon            String?
+  closingDayType  String?
+  closingDayValue Int?
+  createdAt       DateTime @default(now())
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)

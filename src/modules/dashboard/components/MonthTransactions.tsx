@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -9,6 +9,7 @@ import {
   ArrowUpCircle,
   CreditCard,
   ChevronRight,
+  CalendarRange,
 } from "lucide-react";
 import {
   Card,
@@ -26,6 +27,7 @@ import {
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { Badge } from "@/common/components/ui/badge";
 import { Separator } from "@/common/components/ui/separator";
+import { Spinner } from "@/common/components/ui/spinner";
 import { formatCurrency } from "@/lib/utils";
 import type { Transaction } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
@@ -36,27 +38,83 @@ interface CardGroup {
   cardName: string;
   cardIcon: string;
   cardType: string | null | undefined;
+  hasClosingDay: boolean;
   total: number;
   transactions: Transaction[];
 }
 
+interface InvoiceData {
+  transactions: Transaction[];
+  total: number;
+  period: { start: string; end: string; label: string };
+  effectiveClosing: number | null;
+}
+
 interface MonthTransactionsProps {
   transactions: Transaction[];
+  month: number;
+  year: number;
   isLoading?: boolean;
 }
 
 export function MonthTransactions({
   transactions,
+  month,
+  year,
   isLoading,
 }: MonthTransactionsProps) {
   const [selectedCard, setSelectedCard] = useState<CardGroup | null>(null);
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+
+  // Fetch invoice data when a card with closing day is selected
+  const fetchInvoice = useCallback(
+    async (cardId: string) => {
+      setInvoiceLoading(true);
+      try {
+        const res = await fetch(
+          `/api/cards/${cardId}/invoice?month=${month}&year=${year}`
+        );
+        const json = await res.json();
+        if (json.data) {
+          setInvoiceData(json.data);
+        }
+      } catch {
+        setInvoiceData(null);
+      } finally {
+        setInvoiceLoading(false);
+      }
+    },
+    [month, year]
+  );
+
+  function handleCardClick(group: CardGroup) {
+    setSelectedCard(group);
+    setInvoiceData(null);
+    if (group.hasClosingDay) {
+      fetchInvoice(group.cardId);
+    }
+  }
+
+  function handleCloseModal() {
+    setSelectedCard(null);
+    setInvoiceData(null);
+  }
+
+  // Use invoice transactions if available, otherwise use group transactions
+  const activeTransactions = useMemo(() => {
+    if (invoiceData) return invoiceData.transactions;
+    return selectedCard?.transactions ?? [];
+  }, [invoiceData, selectedCard]);
+
+  const activeTotal = invoiceData ? invoiceData.total : (selectedCard?.total ?? 0);
 
   // Compute category chart data for the selected card
   const cardCategoryData = useMemo(() => {
     if (!selectedCard) return [];
 
     const catMap = new Map<string, { name: string; color: string; total: number }>();
-    for (const t of selectedCard.transactions) {
+    for (const t of activeTransactions) {
       if (t.type !== "EXPENSE") continue;
       const key = t.category?.name || "Outros";
       const existing = catMap.get(key);
@@ -78,7 +136,7 @@ export function MonthTransactions({
       value: item.total,
       percentage: totalExpense > 0 ? Math.round((item.total / totalExpense) * 100) : 0,
     }));
-  }, [selectedCard]);
+  }, [selectedCard, activeTransactions]);
 
   // Build a mixed list: non-card transactions as individual items,
   // card transactions grouped by card
@@ -98,8 +156,7 @@ export function MonthTransactions({
             cardId: t.card.id,
             cardName: t.card.name,
             cardIcon: t.card.icon || "💳",
-            cardType: t.cardType,
-            total: t.type === "EXPENSE" ? t.amount : -t.amount,
+            cardType: t.cardType,            hasClosingDay: !!((t.card as unknown as Record<string, unknown>).closingDayType),            total: t.type === "EXPENSE" ? t.amount : -t.amount,
             transactions: [t],
           });
         }
@@ -184,7 +241,7 @@ export function MonthTransactions({
               return (
                 <button
                   key={`card-${group.cardId}`}
-                  onClick={() => setSelectedCard(group)}
+                  onClick={() => handleCardClick(group)}
                   className="flex w-full items-center gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/50 text-left"
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -270,20 +327,37 @@ export function MonthTransactions({
       </Card>
 
       {/* Card detail modal */}
-      <Dialog open={!!selectedCard} onOpenChange={() => setSelectedCard(null)}>
+      <Dialog open={!!selectedCard} onOpenChange={handleCloseModal}>
         <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <span className="text-lg">{selectedCard?.cardIcon}</span>
               {selectedCard?.cardName}
               <Badge variant="outline" className="ml-auto font-semibold text-red-500">
-                -{formatCurrency(selectedCard?.total ?? 0)}
+                -{formatCurrency(activeTotal)}
               </Badge>
             </DialogTitle>
           </DialogHeader>
 
+          {/* Invoice period info */}
+          {selectedCard?.hasClosingDay && (
+            <div className="flex items-center gap-2">
+              {invoiceLoading ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Spinner className="h-4 w-4" />
+                  Carregando fatura...
+                </div>
+              ) : invoiceData ? (
+                <Badge variant="secondary" className="flex items-center gap-1.5 font-normal">
+                  <CalendarRange className="h-3.5 w-3.5" />
+                  Fatura: {invoiceData.period.label}
+                </Badge>
+              ) : null}
+            </div>
+          )}
+
           {/* Category pie chart */}
-          {cardCategoryData.length > 0 && (
+          {!invoiceLoading && cardCategoryData.length > 0 && (
             <>
               <div className="flex flex-col items-center gap-4 sm:flex-row">
                 <div className="h-[160px] w-[160px] shrink-0">
@@ -345,9 +419,17 @@ export function MonthTransactions({
           )}
 
           <div className="space-y-3">
-            {selectedCard?.transactions
-              .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-              .map((t) => (
+            {invoiceLoading ? (
+              <div className="flex justify-center py-8">
+                <Spinner className="h-6 w-6" />
+              </div>
+            ) : (
+              activeTransactions
+                .sort(
+                  (a, b) =>
+                    new Date(b.date).getTime() - new Date(a.date).getTime()
+                )
+                .map((t) => (
                 <div
                   key={t.id}
                   className="flex items-center gap-3 rounded-lg border p-3"
@@ -403,7 +485,8 @@ export function MonthTransactions({
                     {formatCurrency(t.amount)}
                   </p>
                 </div>
-              ))}
+              ))
+            )}
           </div>
         </DialogContent>
       </Dialog>

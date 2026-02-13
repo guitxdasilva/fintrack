@@ -15,6 +15,7 @@ import {
 } from "@/common/components/ui/dialog";
 import { CardForm } from "@/modules/cards/components/CardForm";
 import type { Card as CardType } from "@/types";
+import { formatClosingDayDescription } from "@/lib/invoice";
 
 export default function CardsPage() {
   const [cards, setCards] = useState<CardType[]>([]);
@@ -115,6 +116,11 @@ export default function CardsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{card.name}</p>
+                  {card.closingDayType && card.closingDayValue && (
+                    <p className="text-xs text-muted-foreground">
+                      Fecha: {formatClosingDayDescription(card.closingDayType, card.closingDayValue)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
                   <Button

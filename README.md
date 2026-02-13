@@ -20,8 +20,10 @@
 | Feature | Descrição |
 |---------|-----------|
 | 🔐 **Autenticação** | Login e registro seguros com NextAuth.js (JWT + Credentials) |
-| 📊 **Dashboard** | Visão geral com cards de saldo, gráficos de pizza e barras (Recharts) |
-| 💸 **Transações** | CRUD completo com filtros por tipo, categoria, data e busca por texto |
+| 📊 **Dashboard** | Visão geral com saldo, gráficos e transações do mês agrupadas por cartão |
+| 💸 **Transações** | CRUD completo com filtros, busca, duplicação em massa e exportação CSV |
+| 💳 **Cartões** | Cartões personalizáveis (Nubank, Inter, etc.) com tipo crédito/débito |
+| 💰 **Formas de Pagamento** | Tipos fixos: Dinheiro, PIX, Cartão, Transferência e Boleto |
 | 🏷️ **Categorias** | Categorias personalizáveis com emojis e cores |
 | 🎯 **Metas** | Acompanhamento de progresso com barras visuais e status automático |
 | 🌙 **Dark Mode** | Tema claro/escuro com persistência em localStorage |
@@ -48,22 +50,30 @@ src/
 │   │   ├── dashboard/          # Visão geral
 │   │   ├── transactions/       # Transações
 │   │   ├── categories/         # Categorias
+│   │   ├── cards/              # Cartões
 │   │   └── goals/              # Metas financeiras
 │   └── api/                    # API Routes (REST)
+│       ├── auth/               # Login, registro
+│       ├── cards/              # CRUD de cartões
+│       ├── categories/         # CRUD de categorias
+│       ├── dashboard/          # Dados agregados do dashboard
+│       ├── goals/              # CRUD de metas
+│       └── transactions/       # CRUD, duplicação, exportação CSV
 ├── common/
 │   ├── components/
-│   │   ├── layout/             # Sidebar, Header, MobileNav
+│   │   ├── layout/             # Sidebar, Header
 │   │   └── ui/                 # Componentes shadcn/ui
 │   ├── contexts/               # ThemeContext (dark mode)
 │   └── hooks/                  # useDebounce, useMediaQuery, useMobile
 ├── lib/                        # Auth config, Prisma client, utils
 ├── modules/                    # Feature modules
 │   ├── auth/                   # LoginForm, RegisterForm
+│   ├── cards/                  # CardForm
 │   ├── categories/             # CategoryForm
-│   ├── dashboard/              # BalanceCard, ExpenseChart, IncomeVsExpense
+│   ├── dashboard/              # BalanceCard, ExpenseChart, MonthTransactions
 │   ├── goals/                  # GoalCard, GoalForm, GoalProgress
 │   └── transactions/           # TransactionForm, TransactionFilters, TransactionList
-└── types/                      # TypeScript interfaces
+└── types/                      # TypeScript interfaces e constantes de pagamento
 ```
 
 ## ⚡ Como Rodar
@@ -90,8 +100,11 @@ cp .env.example .env
 ### Variáveis de Ambiente
 
 ```env
-DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
-NEXTAUTH_SECRET="sua-secret-key-aqui"
+# DATABASE
+DATABASE_URL="postgresql://user:password@localhost:5432/fintrack?schema=public"
+
+# NEXTAUTH
+NEXTAUTH_SECRET="sua-chave-secreta-aqui"
 NEXTAUTH_URL="http://localhost:3000"
 ```
 

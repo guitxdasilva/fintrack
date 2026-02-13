@@ -129,6 +129,8 @@ export default function DashboardPage() {
         />
         <MonthTransactions
           transactions={data?.transactions ?? []}
+          month={month}
+          year={year}
           isLoading={isLoading}
         />
       </div>

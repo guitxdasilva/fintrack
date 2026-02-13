@@ -61,10 +61,19 @@ export interface CreateTransactionDTO {
 
 export type UpdateTransactionDTO = Partial<CreateTransactionDTO>;
 
+export type ClosingDayType = "FIXED" | "BEFORE_END";
+
+export const CLOSING_DAY_TYPE_LABELS: Record<ClosingDayType, string> = {
+  FIXED: "Dia fixo do mês",
+  BEFORE_END: "Dias antes do fim do mês",
+};
+
 export interface Card {
   id: string;
   name: string;
   icon?: string;
+  closingDayType?: string | null;
+  closingDayValue?: number | null;
   userId: string;
 }
 
