@@ -34,6 +34,10 @@ export default function TransactionsPage() {
     search: "",
     month: new Date().getMonth(),
     year: new Date().getFullYear(),
+    cardId: "",
+    paid: "",
+    isFixed: "",
+    paymentType: "",
   });
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationData>({
@@ -50,6 +54,10 @@ export default function TransactionsPage() {
       if (filters.type !== "ALL") params.set("type", filters.type);
       if (filters.categoryId) params.set("categoryId", filters.categoryId);
       if (filters.search) params.set("search", filters.search);
+      if (filters.cardId) params.set("cardId", filters.cardId);
+      if (filters.paid) params.set("paid", filters.paid);
+      if (filters.isFixed) params.set("isFixed", filters.isFixed);
+      if (filters.paymentType) params.set("paymentType", filters.paymentType);
       params.set("month", String(filters.month));
       params.set("year", String(filters.year));
       params.set("page", String(page));
@@ -96,6 +104,10 @@ export default function TransactionsPage() {
     if (filters.type !== "ALL") params.set("type", filters.type);
     if (filters.categoryId) params.set("categoryId", filters.categoryId);
     if (filters.search) params.set("search", filters.search);
+    if (filters.cardId) params.set("cardId", filters.cardId);
+    if (filters.paid) params.set("paid", filters.paid);
+    if (filters.isFixed) params.set("isFixed", filters.isFixed);
+    if (filters.paymentType) params.set("paymentType", filters.paymentType);
     params.set("month", String(filters.month));
     params.set("year", String(filters.year));
 

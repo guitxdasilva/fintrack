@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get("endDate");
     const monthParam = searchParams.get("month");
     const yearParam = searchParams.get("year");
+    const cardId = searchParams.get("cardId");
+    const paid = searchParams.get("paid");
+    const isFixed = searchParams.get("isFixed");
+    const paymentType = searchParams.get("paymentType");
 
     const where: Record<string, unknown> = {
       userId: session.user.id,
@@ -32,6 +36,22 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       where.description = { contains: search, mode: "insensitive" };
+    }
+
+    if (cardId) {
+      where.cardId = cardId;
+    }
+
+    if (paid === "true" || paid === "false") {
+      where.paid = paid === "true";
+    }
+
+    if (isFixed === "true" || isFixed === "false") {
+      where.isFixed = isFixed === "true";
+    }
+
+    if (paymentType && ["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"].includes(paymentType)) {
+      where.paymentType = paymentType;
     }
 
     if (monthParam !== null && yearParam !== null) {
