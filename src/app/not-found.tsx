@@ -1,8 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { TrendingUp, Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 
 export default function NotFound() {
+  const router = useRouter();
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground relative overflow-hidden">
       {/* Decorative shapes */}
@@ -29,11 +34,9 @@ export default function NotFound() {
       </div>
 
       <div className="flex gap-3 mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
-        <Button variant="outline" asChild>
-          <Link href="javascript:history.back()">
+        <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
-          </Link>
         </Button>
         <Button asChild className="bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600">
           <Link href="/">
