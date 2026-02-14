@@ -8,6 +8,7 @@ const createCategorySchema = z.object({
   icon: z.string().optional(),
   color: z.string().optional().default("#6366f1"),
   type: z.enum(["INCOME", "EXPENSE"]),
+  budget: z.union([z.number().positive("Orçamento deve ser positivo"), z.null()]).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, icon, color, type } = result.data;
+    const { name, icon, color, type, budget } = result.data;
 
     const existing = await prisma.category.findFirst({
       where: { name, userId: session.user.id },
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
         icon,
         color,
         type,
+        budget: budget ?? null,
         userId: session.user.id,
       },
     });

@@ -87,6 +87,7 @@ export interface Category {
   icon?: string;
   color: string;
   type: TransactionType;
+  budget?: number | null;
   userId: string;
 }
 
@@ -95,6 +96,17 @@ export interface CreateCategoryDTO {
   icon?: string;
   color?: string;
   type: TransactionType;
+  budget?: number | null;
+}
+
+export interface BudgetSummary {
+  categoryId: string;
+  categoryName: string;
+  categoryIcon?: string;
+  categoryColor: string;
+  budget: number;
+  spent: number;
+  percentage: number;
 }
 
 export interface Goal {

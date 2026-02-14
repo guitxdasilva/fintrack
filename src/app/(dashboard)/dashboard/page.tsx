@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { BalanceCard } from "@/modules/dashboard/components/BalanceCard";
+import { BudgetOverview } from "@/modules/dashboard/components/BudgetOverview";
 import { ExpenseChart } from "@/modules/dashboard/components/ExpenseChart";
 import { IncomeVsExpense } from "@/modules/dashboard/components/IncomeVsExpense";
 import { MonthTransactions } from "@/modules/dashboard/components/MonthTransactions";
@@ -140,6 +141,12 @@ export default function DashboardPage() {
 
       <IncomeVsExpense
         data={data?.monthlyData ?? []}
+        isLoading={isLoading}
+      />
+
+      <BudgetOverview
+        month={month}
+        year={year}
         isLoading={isLoading}
       />
     </div>

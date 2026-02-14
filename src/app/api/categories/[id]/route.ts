@@ -8,6 +8,7 @@ const updateCategorySchema = z.object({
   icon: z.string().optional(),
   color: z.string().optional(),
   type: z.enum(["INCOME", "EXPENSE"]).optional(),
+  budget: z.union([z.number().positive("Orçamento deve ser positivo"), z.null()]).optional(),
 });
 
 export async function GET(
@@ -81,7 +82,8 @@ export async function PUT(
     });
 
     return NextResponse.json({ data: updated });
-  } catch {
+  } catch (error) {
+    console.error("Error updating category:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar categoria" },
       { status: 500 }

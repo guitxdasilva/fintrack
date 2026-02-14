@@ -60,6 +60,7 @@ export function CategoryForm({
   const [type, setType] = useState<TransactionType>("EXPENSE");
   const [color, setColor] = useState("#6366f1");
   const [icon, setIcon] = useState("📦");
+  const [budget, setBudget] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!category;
@@ -70,11 +71,13 @@ export function CategoryForm({
       setType(category.type);
       setColor(category.color);
       setIcon(category.icon || "📦");
+      setBudget(category.budget ? String(category.budget) : "");
     } else {
       setName("");
       setType("EXPENSE");
       setColor("#6366f1");
       setIcon("📦");
+      setBudget("");
     }
   }, [category, open]);
 
@@ -97,7 +100,13 @@ export function CategoryForm({
     setLoading(true);
 
     try {
-      const payload = { name: name.trim(), type, color, icon };
+      const payload = {
+        name: name.trim(),
+        type,
+        color,
+        icon,
+        budget: budget ? parseFloat(budget) : null,
+      };
 
       const url = isEditing
         ? `/api/categories/${category.id}`
@@ -223,6 +232,24 @@ export function CategoryForm({
               </p>
             </div>
           </div>
+
+          {type === "EXPENSE" && (
+            <div className="space-y-2">
+              <Label htmlFor="budget">Orçamento mensal (opcional)</Label>
+              <Input
+                id="budget"
+                type="number"
+                placeholder="Ex: 1000.00"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+              <p className="text-xs text-muted-foreground">
+                Defina um limite mensal para acompanhar seus gastos nesta categoria
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <Button

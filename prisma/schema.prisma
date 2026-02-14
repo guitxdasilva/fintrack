@@ -80,6 +80,7 @@ model Category {
   icon        String?
   color       String        @default("#6366f1")
   type        TransactionType
+  budget      Float?
   createdAt   DateTime      @default(now())
 
   userId      String
