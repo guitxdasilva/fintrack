@@ -21,6 +21,7 @@ model User {
   categories     Category[]
   goals          Goal[]
   cards          Card[]
+  passwordResets PasswordResetToken[]
 }
 
 model Account {
@@ -127,4 +128,18 @@ model Card {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  email     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([email])
 }

@@ -1,0 +1,55 @@
+import Link from "next/link";
+import { TrendingUp } from "lucide-react";
+import { ForgotPasswordForm } from "@/modules/auth/components/ForgotPasswordForm";
+import { ThemeToggle } from "@/common/components/ThemeToggle";
+
+export default function ForgotPasswordPage() {
+  return (
+    <div className="grid min-h-screen lg:grid-cols-2">
+      <div className="hidden lg:flex flex-col justify-between bg-gray-950 p-10 text-white relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
+
+        <div className="flex items-center gap-2 relative">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
+            <TrendingUp className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-xl font-bold">FinTrack</span>
+        </div>
+
+        <div className="space-y-4 relative">
+          <span className="text-6xl font-serif text-indigo-500/30 leading-none">&ldquo;</span>
+          <blockquote className="text-2xl font-semibold leading-relaxed -mt-6">
+            Não se preocupe, vamos te ajudar a recuperar o acesso à sua conta.
+          </blockquote>
+          <p className="text-gray-400">
+            Em instantes você poderá redefinir sua senha e voltar ao controle.
+          </p>
+        </div>
+
+        <p className="text-sm text-gray-500 relative">
+          &copy; 2026 FinTrack
+        </p>
+      </div>
+
+      <div className="flex items-center justify-center bg-background px-4 py-12 relative">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle className="size-9" />
+        </div>
+        <div className="w-full max-w-md space-y-6">
+          <div className="flex items-center gap-2 lg:hidden justify-center mb-4">
+            <Link href="/" className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
+                <TrendingUp className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xl font-bold">FinTrack</span>
+            </Link>
+          </div>
+          <ForgotPasswordForm />
+        </div>
+      </div>
+    </div>
+  );
+}

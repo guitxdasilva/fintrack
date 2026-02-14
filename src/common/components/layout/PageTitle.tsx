@@ -9,6 +9,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/cards": "Cartões",
   "/goals": "Metas",
   "/budget": "Orçamento",
+  "/settings": "Configurações",
 };
 
 export function PageTitle() {

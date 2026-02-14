@@ -158,6 +158,14 @@ export function LoginForm() {
             {fieldErrors.password && (
               <p className="text-xs text-destructive">{fieldErrors.password}</p>
             )}
+            <div className="flex justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                Esqueceu a senha?
+              </Link>
+            </div>
           </div>
         </CardContent>
 

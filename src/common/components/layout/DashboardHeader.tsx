@@ -1,7 +1,8 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,9 +52,15 @@ export function DashboardHeader({ userName, userEmail }: DashboardHeaderProps) {
               </span>
             </div>
           </div>
+          <DropdownMenuItem asChild className="cursor-pointer mt-1">
+            <Link href="/settings">
+              <Settings className="size-4" />
+              <span className="ml-2">Configurações</span>
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="cursor-pointer mt-1"
+            className="cursor-pointer"
           >
             <LogOut className="size-4" />
             <span className="ml-2">Sair</span>

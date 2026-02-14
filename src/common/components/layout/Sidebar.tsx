@@ -10,6 +10,7 @@ import {
   CreditCard,
   TrendingUp,
   PiggyBank,
+  Settings,
 } from "lucide-react";
 import {
   Sidebar as ShadcnSidebar,
@@ -53,6 +54,11 @@ const navItems = [
     title: "Metas",
     url: "/goals",
     icon: Target,
+  },
+  {
+    title: "Configurações",
+    url: "/settings",
+    icon: Settings,
   },
 ];
 
