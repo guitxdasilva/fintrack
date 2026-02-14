@@ -2,7 +2,8 @@
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, ArrowLeftRight } from "lucide-react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -12,6 +13,7 @@ import {
 } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { Badge } from "@/common/components/ui/badge";
+import { EmptyState } from "@/common/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 import type { Transaction } from "@/types";
 
@@ -54,10 +56,13 @@ export function RecentTransactions({
           <CardTitle>Transações Recentes</CardTitle>
           <CardDescription>Últimas movimentações</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[200px] items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma transação registrada
-          </p>
+        <CardContent>
+          <EmptyState
+            icon={ArrowLeftRight}
+            title="Nenhuma transação"
+            description="Registre sua primeira transação para vê-la aqui"
+            compact
+          />
         </CardContent>
       </Card>
     );
@@ -65,15 +70,23 @@ export function RecentTransactions({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Transações Recentes</CardTitle>
-        <CardDescription>Últimas movimentações</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Transações Recentes</CardTitle>
+          <CardDescription>Últimas movimentações</CardDescription>
+        </div>
+        <Link
+          href="/transactions"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        >
+          Ver todas &rarr;
+        </Link>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-1">
         {transactions.map((transaction) => (
           <div
             key={transaction.id}
-            className="flex items-center gap-4"
+            className="flex items-center gap-4 rounded-lg px-2 py-2.5 -mx-2 transition-colors hover:bg-muted/50"
           >
             <div
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${

@@ -86,13 +86,22 @@ export function BalanceCard({
 
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
-      {cards.map((card) => (
-        <Card key={card.title}>
+      {cards.map((card, index) => (
+        <Card
+          key={card.title}
+          className={`transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 ${
+            index === 0
+              ? "border-indigo-200 dark:border-indigo-500/20 bg-gradient-to-br from-indigo-50/50 to-background dark:from-indigo-950/20 dark:to-card"
+              : ""
+          }`}
+        >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {card.title}
             </CardTitle>
-            <card.icon className={`h-5 w-5 ${card.iconColor}`} />
+            <div className={`rounded-lg p-1.5 ${index === 0 ? "bg-indigo-500/10" : ""}`}>
+              <card.icon className={`h-5 w-5 ${card.iconColor}`} />
+            </div>
           </CardHeader>
           <CardContent>
             <p className={`text-2xl font-bold ${card.color}`}>

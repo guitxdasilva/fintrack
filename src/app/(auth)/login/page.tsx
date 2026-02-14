@@ -6,24 +6,30 @@ import { ThemeToggle } from "@/common/components/ThemeToggle";
 export default function LoginPage() {
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between bg-gray-950 p-10 text-white">
-        <div className="flex items-center gap-2">
+      <div className="hidden lg:flex flex-col justify-between bg-gray-950 p-10 text-white relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
+
+        <div className="flex items-center gap-2 relative">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
             <TrendingUp className="h-5 w-5 text-white" />
           </div>
           <span className="text-xl font-bold">FinTrack</span>
         </div>
 
-        <div className="space-y-4">
-          <blockquote className="text-2xl font-semibold leading-relaxed">
-            &ldquo;Organizar suas finanças é o primeiro passo para conquistar seus objetivos.&rdquo;
+        <div className="space-y-4 relative">
+          <span className="text-6xl font-serif text-indigo-500/30 leading-none">&ldquo;</span>
+          <blockquote className="text-2xl font-semibold leading-relaxed -mt-6">
+            Organizar suas finanças é o primeiro passo para conquistar seus objetivos.
           </blockquote>
           <p className="text-gray-400">
             Dashboard financeiro pessoal com gráficos interativos e metas.
           </p>
         </div>
 
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 relative">
           &copy; 2026 FinTrack
         </p>
       </div>
