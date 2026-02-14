@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import { Card, CardContent } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
+import { EmptyState } from "@/common/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -99,12 +100,13 @@ export default function CardsPage() {
           ))}
         </div>
       ) : cards.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <CreditCard className="h-8 w-8" />
-          </div>
-          <p className="text-lg font-medium">Nenhum cartão cadastrado</p>
-          <p className="text-sm mt-1">Adicione seus cartões para usá-los em transações</p>
+        <div className="rounded-lg border bg-card">
+          <EmptyState
+            icon={CreditCard}
+            title="Nenhum cartão cadastrado"
+            description="Adicione seus cartões para usá-los em transações"
+            action={{ label: "Novo Cartão", onClick: handleNew }}
+          />
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/common/components/ui/badge";
 import { Button } from "@/common/components/ui/button";
 import { Skeleton } from "@/common/components/ui/skeleton";
+import { EmptyState } from "@/common/components/ui/empty-state";
 import { formatCurrency, formatDate, getTransactionColor } from "@/lib/utils";
 import type { Transaction } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
@@ -148,13 +149,11 @@ export function TransactionList({
 
   if (transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-        <div className="rounded-full bg-muted p-4 mb-4">
-          <ArrowLeftRight className="h-8 w-8" />
-        </div>
-        <p className="text-lg font-medium">Nenhuma transação encontrada</p>
-        <p className="text-sm mt-1">Crie sua primeira transação clicando no botão acima</p>
-      </div>
+      <EmptyState
+        icon={ArrowLeftRight}
+        title="Nenhuma transação encontrada"
+        description="Crie sua primeira transação clicando no botão acima"
+      />
     );
   }
 
@@ -196,7 +195,7 @@ export function TransactionList({
                   </button>
                 </TableCell>
                 <TableCell className="font-medium">
-                  <span className="flex items-center gap-1.5">
+                  <span className={`flex items-center gap-1.5 ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
                     {transaction.description}
                     {transaction.isFixed && (
                       <Badge variant="outline" className="text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
@@ -365,7 +364,7 @@ export function TransactionList({
             </button>
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
+              <p className={`text-sm font-medium truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
                 {transaction.description}
                 {transaction.isFixed && (
                   <Badge variant="outline" className="ml-1.5 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">

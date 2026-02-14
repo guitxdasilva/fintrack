@@ -35,6 +35,7 @@ import { Badge } from "@/common/components/ui/badge";
 import { Button } from "@/common/components/ui/button";
 import { Separator } from "@/common/components/ui/separator";
 import { Spinner } from "@/common/components/ui/spinner";
+import { EmptyState } from "@/common/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 import type { Transaction } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
@@ -257,10 +258,13 @@ export function MonthTransactions({
           <CardTitle>Transações do Mês</CardTitle>
           <CardDescription>Movimentações e cartões</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[200px] items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma transação registrada
-          </p>
+        <CardContent>
+          <EmptyState
+            icon={ArrowDownCircle}
+            title="Sem movimentações"
+            description="Nenhuma transação registrada neste mês"
+            compact
+          />
         </CardContent>
       </Card>
     );
@@ -363,7 +367,7 @@ export function MonthTransactions({
                 )}
 
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className="text-sm font-medium leading-none truncate">
+                  <p className={`text-sm font-medium leading-none truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
                     {transaction.description}
                     {transaction.isFixed && (
                       <Badge variant="outline" className="ml-1.5 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
@@ -575,7 +579,7 @@ export function MonthTransactions({
                   )}
 
                   <div className="flex-1 min-w-0 space-y-0.5">
-                    <p className="text-sm font-medium truncate">
+                    <p className={`text-sm font-medium truncate ${t.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
                       {t.description}
                       {t.isFixed && (
                         <Badge variant="outline" className="ml-1.5 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">

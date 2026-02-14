@@ -24,6 +24,8 @@ import { formatCurrency } from "@/lib/utils";
 import type { CategorySummary, Transaction } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
 import type { PaymentType } from "@/types";
+import { PieChartIcon } from "lucide-react";
+import { EmptyState } from "@/common/components/ui/empty-state";
 
 interface ExpenseChartProps {
   data: CategorySummary[];
@@ -65,10 +67,13 @@ export function ExpenseChart({ data, transactions = [], isLoading }: ExpenseChar
           <CardTitle>Despesas por Categoria</CardTitle>
           <CardDescription>Distribuição dos gastos do mês</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[300px] items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma despesa registrada neste mês
-          </p>
+        <CardContent>
+          <EmptyState
+            icon={PieChartIcon}
+            title="Sem despesas"
+            description="Nenhuma despesa registrada neste mês"
+            compact
+          />
         </CardContent>
       </Card>
     );

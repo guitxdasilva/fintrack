@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
+import { EmptyState } from "@/common/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 import type { BudgetSummary } from "@/types";
 
@@ -102,13 +103,12 @@ export default function BudgetPage() {
         </div>
       ) : !data || data.budgets.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Wallet className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold">Nenhum orçamento definido</h3>
-            <p className="text-sm text-muted-foreground mt-1 max-w-md">
-              Defina um orçamento mensal nas suas categorias de despesa para acompanhar seus gastos.
-              Vá em <strong>Categorias</strong> e edite uma categoria para adicionar um orçamento.
-            </p>
+          <CardContent>
+            <EmptyState
+              icon={Wallet}
+              title="Nenhum orçamento definido"
+              description="Defina um orçamento mensal nas suas categorias de despesa. Vá em Categorias e edite uma categoria para adicionar."
+            />
           </CardContent>
         </Card>
       ) : (

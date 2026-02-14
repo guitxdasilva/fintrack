@@ -18,8 +18,10 @@ import {
   CardTitle,
 } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
+import { EmptyState } from "@/common/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
 import type { MonthlyData } from "@/types";
+import { BarChart3 } from "lucide-react";
 
 interface IncomeVsExpenseProps {
   data: MonthlyData[];
@@ -52,10 +54,13 @@ export function IncomeVsExpense({ data, isLoading }: IncomeVsExpenseProps) {
           <CardTitle>Receitas vs Despesas</CardTitle>
           <CardDescription>Comparativo dos últimos 6 meses</CardDescription>
         </CardHeader>
-        <CardContent className="flex h-[300px] items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma transação registrada nos últimos 6 meses
-          </p>
+        <CardContent>
+          <EmptyState
+            icon={BarChart3}
+            title="Sem dados"
+            description="Nenhuma transação registrada nos últimos 6 meses"
+            compact
+          />
         </CardContent>
       </Card>
     );

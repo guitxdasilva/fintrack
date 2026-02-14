@@ -5,6 +5,7 @@ import { Plus, Target } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import { Skeleton } from "@/common/components/ui/skeleton";
+import { EmptyState } from "@/common/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -105,16 +106,13 @@ export default function GoalsPage() {
           ))}
         </div>
       ) : goals.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-12 text-center">
-          <Target className="h-12 w-12 text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-semibold">Nenhuma meta cadastrada</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Crie sua primeira meta financeira para começar a acompanhar seu progresso
-          </p>
-          <Button onClick={handleNew} className="mt-4">
-            <Plus className="mr-2 h-4 w-4" />
-            Criar Meta
-          </Button>
+        <div className="rounded-lg border bg-card">
+          <EmptyState
+            icon={Target}
+            title="Nenhuma meta cadastrada"
+            description="Crie sua primeira meta financeira para começar a acompanhar seu progresso"
+            action={{ label: "Criar Meta", onClick: handleNew }}
+          />
         </div>
       ) : (
         <div className="space-y-8">
