@@ -186,10 +186,10 @@ export function TransactionList({
                     onClick={() => toggleSelection(transaction.id)}
                     title={isSelected ? "Desmarcar" : "Selecionar"}
                   >
-                    {isExpense && transaction.paid ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    ) : isSelected ? (
+                    {isSelected ? (
                       <CheckCircle2 className="h-4 w-4 text-primary" />
+                    ) : isExpense && transaction.paid ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     ) : (
                       <Circle className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -295,19 +295,27 @@ export function TransactionList({
               >
                 Cancelar
               </Button>
-              <Button
-                size="sm"
-                onClick={handleConfirmPaid}
-                disabled={confirming || bulkDeleting}
-                className="gap-1.5"
-              >
-                {confirming ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Check className="h-3.5 w-3.5" />
-                )}
-                Marcar Pago
-              </Button>
+              {(() => {
+                const selectedExpenses = Array.from(selectedIds)
+                  .map((id) => transactions.find((t) => t.id === id))
+                  .filter((t) => t && t.type === "EXPENSE");
+                const allPaid = selectedExpenses.length > 0 && selectedExpenses.every((t) => t!.paid);
+                return (
+                  <Button
+                    size="sm"
+                    onClick={handleConfirmPaid}
+                    disabled={confirming || bulkDeleting}
+                    className="gap-1.5"
+                  >
+                    {confirming ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Check className="h-3.5 w-3.5" />
+                    )}
+                    {allPaid ? "Desmarcar Pago" : "Marcar Pago"}
+                  </Button>
+                );
+              })()}
               <Button
                 size="sm"
                 variant="destructive"
@@ -334,10 +342,10 @@ export function TransactionList({
           >
             <button
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
-                isExpense && transaction.paid
-                  ? "bg-emerald-500/10"
-                  : isSelected
-                    ? "bg-primary/10"
+                isSelected
+                  ? "bg-primary/10"
+                  : isExpense && transaction.paid
+                    ? "bg-emerald-500/10"
                     : isExpense
                       ? "bg-red-500/10"
                       : "bg-emerald-500/10"
@@ -345,10 +353,10 @@ export function TransactionList({
               onClick={() => toggleSelection(transaction.id)}
               title={isSelected ? "Desmarcar" : "Selecionar"}
             >
-              {isExpense && transaction.paid ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              ) : isSelected ? (
+              {isSelected ? (
                 <CheckCircle2 className="h-5 w-5 text-primary" />
+              ) : isExpense && transaction.paid ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               ) : isExpense ? (
                 <Circle className="h-5 w-5 text-red-400" />
               ) : (
@@ -439,19 +447,27 @@ export function TransactionList({
               >
                 Cancelar
               </Button>
-              <Button
-                size="sm"
-                onClick={handleConfirmPaid}
-                disabled={confirming || bulkDeleting}
-                className="gap-1.5"
-              >
-                {confirming ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Check className="h-3.5 w-3.5" />
-                )}
-                Pago
-              </Button>
+              {(() => {
+                const selectedExpenses = Array.from(selectedIds)
+                  .map((id) => transactions.find((t) => t.id === id))
+                  .filter((t) => t && t.type === "EXPENSE");
+                const allPaid = selectedExpenses.length > 0 && selectedExpenses.every((t) => t!.paid);
+                return (
+                  <Button
+                    size="sm"
+                    onClick={handleConfirmPaid}
+                    disabled={confirming || bulkDeleting}
+                    className="gap-1.5"
+                  >
+                    {confirming ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Check className="h-3.5 w-3.5" />
+                    )}
+                    {allPaid ? "Desmarcar" : "Pago"}
+                  </Button>
+                );
+              })()}
               <Button
                 size="sm"
                 variant="destructive"

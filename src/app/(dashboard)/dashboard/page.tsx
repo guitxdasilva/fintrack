@@ -128,6 +128,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <ExpenseChart
           data={data?.expensesByCategory ?? []}
+          transactions={data?.transactions ?? []}
           isLoading={isLoading}
         />
         <MonthTransactions
