@@ -17,6 +17,10 @@ import {
   Receipt,
   ArrowUpDown,
   ChevronRight,
+  SlidersHorizontal,
+  KeyRound,
+  GraduationCap,
+  UserCog,
 } from "lucide-react";
 import { ThemeToggle } from "@/common/components/ThemeToggle";
 
@@ -124,7 +128,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 {
                   icon: BarChart3,
@@ -139,7 +143,7 @@ export default function Home() {
                   icon: Wallet,
                   title: "Transações Completas",
                   description:
-                    "Receitas e despesas com filtros, busca, ações em massa, status pago/pendente e exportação CSV.",
+                    "Receitas e despesas com filtros avançados (status, cartão, forma de pagamento, fixa/variável), exportação CSV e ações em massa.",
                   color: "text-emerald-500 dark:text-emerald-400",
                   bg: "bg-emerald-500/10",
                   border: "group-hover:border-emerald-500/20",
@@ -164,7 +168,7 @@ export default function Home() {
                 },
                 {
                   icon: PieChart,
-                  title: "Categorias Personalizadas",
+                  title: "Categorias Personalizáveis",
                   description:
                     "Organize gastos com categorias customizáveis, ícones e cores. Clique para ver detalhes.",
                   color: "text-purple-500 dark:text-purple-400",
@@ -179,6 +183,24 @@ export default function Home() {
                   color: "text-blue-500 dark:text-blue-400",
                   bg: "bg-blue-500/10",
                   border: "group-hover:border-blue-500/20",
+                },
+                {
+                  icon: KeyRound,
+                  title: "Segurança & Recuperação",
+                  description:
+                    "Recuperação de senha via email, edição de perfil e exclusão de conta segura.",
+                  color: "text-rose-500 dark:text-rose-400",
+                  bg: "bg-rose-500/10",
+                  border: "group-hover:border-rose-500/20",
+                },
+                {
+                  icon: GraduationCap,
+                  title: "Tour Guiado",
+                  description:
+                    "Onboarding interativo no primeiro acesso que apresenta todas as funcionalidades do app.",
+                  color: "text-cyan-500 dark:text-cyan-400",
+                  bg: "bg-cyan-500/10",
+                  border: "group-hover:border-cyan-500/20",
                 },
               ].map((feature) => (
                 <div
@@ -241,9 +263,9 @@ export default function Home() {
                   detail: "Controle o status de cada gasto",
                 },
                 {
-                  icon: PieChart,
-                  label: "Gráficos detalhados",
-                  detail: "Clique para explorar categorias",
+                  icon: SlidersHorizontal,
+                  label: "Filtros avançados",
+                  detail: "Cartão, status, pagamento e tipo",
                 },
                 {
                   icon: CreditCard,
@@ -251,9 +273,9 @@ export default function Home() {
                   detail: "Agrupadas por dia de fechamento",
                 },
                 {
-                  icon: Zap,
-                  label: "Tema claro e escuro",
-                  detail: "Adapta ao seu estilo",
+                  icon: UserCog,
+                  label: "Perfil & configurações",
+                  detail: "Edite seu nome, email e senha",
                 },
               ].map((item) => (
                 <div

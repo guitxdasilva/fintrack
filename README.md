@@ -1,7 +1,7 @@
 # 💰 FinTrack — Dashboard Financeiro Pessoal
 
 <p align="center">
-  <strong>Controle suas finanças com dashboard interativo, gráficos, categorias e metas.</strong>
+  <strong>Controle suas finanças com dashboard interativo, gráficos, categorias, orçamento e metas.</strong>
 </p>
 
 <p align="center">
@@ -20,12 +20,16 @@
 | Feature | Descrição |
 |---------|-----------|
 | 🔐 **Autenticação** | Login e registro seguros com NextAuth.js (JWT + Credentials) |
-| 📊 **Dashboard** | Visão geral com saldo, gráficos e transações do mês agrupadas por cartão |
-| 💸 **Transações** | CRUD completo com filtros, busca, duplicação em massa e exportação CSV |
-| 💳 **Cartões** | Cartões personalizáveis (Nubank, Inter, etc.) com tipo crédito/débito |
-| 💰 **Formas de Pagamento** | Tipos fixos: Dinheiro, PIX, Cartão, Transferência e Boleto |
+| 🔑 **Recuperação de Senha** | Fluxo completo via email (Nodemailer + Gmail SMTP) com token seguro |
+| 📊 **Dashboard** | Visão geral com saldo, gráficos, transações do mês agrupadas por cartão e orçamento |
+| 💸 **Transações** | CRUD com filtros avançados (status, cartão, forma de pagamento, fixa/variável), busca, duplicação em massa e exportação CSV |
+| 💳 **Cartões** | Cartões personalizáveis com dia de fechamento e acompanhamento de faturas |
+| 💰 **Formas de Pagamento** | Dinheiro, PIX, Cartão, Transferência e Boleto |
 | 🏷️ **Categorias** | Categorias personalizáveis com emojis e cores |
+| 🐷 **Orçamento** | Limites de gastos por categoria com barras de progresso e alertas |
 | 🎯 **Metas** | Acompanhamento de progresso com barras visuais e status automático |
+| ⚙️ **Configurações** | Edição de perfil, redefinição de senha via email e exclusão de conta |
+| 🎓 **Tour Guiado** | Onboarding interativo no primeiro acesso com driver.js (refazer a qualquer momento) |
 | 🌙 **Dark Mode** | Tema claro/escuro com persistência em localStorage |
 | 📱 **Responsivo** | Layout adaptativo para desktop, tablet e mobile |
 
@@ -34,10 +38,11 @@
 | Camada | Tecnologias |
 |--------|-------------|
 | **Frontend** | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4 |
-| **Componentes** | shadcn/ui (new-york), Recharts |
+| **Componentes** | shadcn/ui (new-york), Recharts, driver.js |
 | **Backend** | Next.js API Routes, Zod validation |
 | **Banco de Dados** | PostgreSQL (Neon) com Prisma ORM v7 |
 | **Autenticação** | NextAuth.js v5 (beta) |
+| **Email** | Nodemailer 7 + Gmail SMTP |
 | **Deploy** | Vercel |
 
 ## 📁 Estrutura do Projeto
@@ -45,35 +50,40 @@
 ```
 src/
 ├── app/                        # Next.js App Router
-│   ├── (auth)/                 # Login e Registro
+│   ├── (auth)/                 # Login, Registro, Forgot/Reset Password
 │   ├── (dashboard)/            # Páginas protegidas
 │   │   ├── dashboard/          # Visão geral
-│   │   ├── transactions/       # Transações
+│   │   ├── transactions/       # Transações (filtros avançados)
 │   │   ├── categories/         # Categorias
 │   │   ├── cards/              # Cartões
-│   │   └── goals/              # Metas financeiras
+│   │   ├── budget/             # Orçamento por categoria
+│   │   ├── goals/              # Metas financeiras
+│   │   └── settings/           # Perfil e configurações
 │   └── api/                    # API Routes (REST)
-│       ├── auth/               # Login, registro
-│       ├── cards/              # CRUD de cartões
+│       ├── auth/               # Login, registro, forgot/reset password, tour, profile
+│       ├── budget/             # Orçamento por categoria
+│       ├── cards/              # CRUD de cartões + faturas
 │       ├── categories/         # CRUD de categorias
 │       ├── dashboard/          # Dados agregados do dashboard
 │       ├── goals/              # CRUD de metas
 │       └── transactions/       # CRUD, duplicação, exportação CSV
 ├── common/
 │   ├── components/
-│   │   ├── layout/             # Sidebar, Header
-│   │   └── ui/                 # Componentes shadcn/ui
+│   │   ├── layout/             # Sidebar, Header, PageTitle
+│   │   ├── ui/                 # Componentes shadcn/ui
+│   │   ├── OnboardingTour.tsx  # Tour guiado (driver.js)
+│   │   └── ThemeToggle.tsx     # Alternador de tema
 │   ├── contexts/               # ThemeContext (dark mode)
 │   └── hooks/                  # useDebounce, useMediaQuery, useMobile
-├── lib/                        # Auth config, Prisma client, utils
+├── lib/                        # Auth config, Prisma client, email utils
 ├── modules/                    # Feature modules
-│   ├── auth/                   # LoginForm, RegisterForm
+│   ├── auth/                   # LoginForm, RegisterForm, ForgotPassword, ResetPassword
 │   ├── cards/                  # CardForm
 │   ├── categories/             # CategoryForm
-│   ├── dashboard/              # BalanceCard, ExpenseChart, MonthTransactions
+│   ├── dashboard/              # BalanceCard, ExpenseChart, MonthTransactions, BudgetOverview
 │   ├── goals/                  # GoalCard, GoalForm, GoalProgress
 │   └── transactions/           # TransactionForm, TransactionFilters, TransactionList
-└── types/                      # TypeScript interfaces e constantes de pagamento
+└── types/                      # TypeScript interfaces e constantes
 ```
 
 ## ⚡ Como Rodar
@@ -106,6 +116,12 @@ DATABASE_URL="postgresql://user:password@localhost:5432/fintrack?schema=public"
 # NEXTAUTH
 NEXTAUTH_SECRET="sua-chave-secreta-aqui"
 NEXTAUTH_URL="http://localhost:3000"
+AUTH_TRUST_HOST=true
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# EMAIL (Gmail SMTP — necessário para recuperação de senha)
+SMTP_EMAIL="seu-email@gmail.com"
+SMTP_PASSWORD="sua-app-password-gmail"
 ```
 
 ### Rodando
