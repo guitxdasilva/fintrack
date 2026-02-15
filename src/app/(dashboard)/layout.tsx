@@ -11,6 +11,7 @@ import { Separator } from "@/common/components/ui/separator";
 import { DashboardHeader } from "@/common/components/layout/DashboardHeader";
 import { PageTitle } from "@/common/components/layout/PageTitle";
 import { OnboardingTour } from "@/common/components/OnboardingTour";
+import { FeedbackButton } from "@/common/components/FeedbackButton";
 
 export default async function DashboardLayout({
   children,
@@ -47,6 +48,7 @@ export default async function DashboardLayout({
         </div>
       </SidebarInset>
       <OnboardingTour />
+      <FeedbackButton />
     </SidebarProvider>
   );
 }

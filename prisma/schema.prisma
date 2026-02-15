@@ -23,6 +23,7 @@ model User {
   goals          Goal[]
   cards          Card[]
   passwordResets PasswordResetToken[]
+  feedbacks      Feedback[]
 }
 
 model Account {
@@ -143,4 +144,22 @@ model PasswordResetToken {
 
   @@index([token])
   @@index([email])
+}
+
+enum FeedbackType {
+  BUG
+  SUGGESTION
+  COMPLIMENT
+}
+
+model Feedback {
+  id        String       @id @default(cuid())
+  type      FeedbackType
+  message   String
+  createdAt DateTime     @default(now())
+
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
