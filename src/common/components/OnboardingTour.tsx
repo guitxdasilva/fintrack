@@ -123,7 +123,7 @@ export function OnboardingTour() {
 
     async function checkTourStatus() {
       try {
-        const res = await fetch("/api/auth/tour");
+        const res = await fetch("/api/auth/tour", { cache: "no-store" });
         const data = await res.json();
         if (!data.hasCompletedTour) {
           setShouldStart(true);
@@ -158,6 +158,9 @@ export function OnboardingTour() {
           completeTour();
           setShouldStart(false);
           driverObj.destroy();
+        },
+        onDestroyed: () => {
+          completeTour();
         },
       });
 
