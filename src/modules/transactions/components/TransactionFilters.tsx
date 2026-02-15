@@ -142,7 +142,7 @@ export function TransactionFilters({
   const advancedFilterCount = [cardId !== "ALL", paid !== "ALL", isFixed !== "ALL", paymentType !== "ALL"].filter(Boolean).length;
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {/* Month navigator */}
       <div className="flex items-center justify-center gap-2">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousMonth}>
@@ -160,7 +160,7 @@ export function TransactionFilters({
       </div>
 
       {/* Basic filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -235,7 +235,7 @@ export function TransactionFilters({
 
       {/* Advanced filters */}
       {showAdvanced && (
-        <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-3 border-t animate-in fade-in slide-in-from-top-2 duration-200">
           <Select value={paid} onValueChange={setPaid}>
             <SelectTrigger className="w-full sm:w-[150px]">
               <SelectValue placeholder="Status" />
@@ -295,7 +295,7 @@ export function TransactionFilters({
 
       {/* Active advanced filter badges */}
       {advancedFilterCount > 0 && !showAdvanced && (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-2">
           {paid !== "ALL" && (
             <Badge variant="secondary" className="gap-1 text-xs cursor-pointer" onClick={() => setPaid("ALL")}>
               {paid === "true" ? "✅ Pago" : "⏳ Pendente"}

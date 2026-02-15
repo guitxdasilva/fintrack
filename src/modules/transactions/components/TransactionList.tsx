@@ -33,6 +33,7 @@ interface TransactionListProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: () => void;
   onTogglePaid?: () => void;
+  viewMode?: "table" | "cards";
 }
 
 export function TransactionList({
@@ -41,6 +42,7 @@ export function TransactionList({
   onEdit,
   onDelete,
   onTogglePaid,
+  viewMode = "table",
 }: TransactionListProps) {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -159,7 +161,7 @@ export function TransactionList({
 
   return (
     <div>
-      <div className="hidden md:block">
+      <div className={viewMode === "table" ? "hidden md:block" : "hidden"}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -330,7 +332,7 @@ export function TransactionList({
         )}
       </div>
 
-      <div className="md:hidden divide-y">
+      <div className={viewMode === "table" ? "md:hidden divide-y" : "divide-y"}>
         {transactions.map((transaction) => {
           const isExpense = transaction.type === "EXPENSE";
           const isSelected = selectedIds.has(transaction.id);

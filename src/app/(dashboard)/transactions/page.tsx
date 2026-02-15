@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Plus, Download, Copy, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Download, Copy, ArrowUpCircle, ArrowDownCircle, List, LayoutGrid } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { TransactionList } from "@/modules/transactions/components/TransactionList";
 import { TransactionForm } from "@/modules/transactions/components/TransactionForm";
@@ -11,7 +11,15 @@ import {
   type FilterValues,
 } from "@/modules/transactions/components/TransactionFilters";
 import { Pagination } from "@/common/components/ui/pagination";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/common/components/ui/tooltip";
 import type { Transaction } from "@/types";
+
+type ViewMode = "table" | "cards";
 
 interface PaginationData {
   page: number;
@@ -38,6 +46,12 @@ export default function TransactionsPage() {
     paid: "",
     isFixed: "",
     paymentType: "",
+  });
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("transactions-view") as ViewMode) || "table";
+    }
+    return "table";
   });
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -154,6 +168,42 @@ export default function TransactionsPage() {
             <ArrowDownCircle className="mr-2 h-4 w-4" />
             Nova Despesa
           </Button>
+          <TooltipProvider>
+            <div className="hidden md:flex items-center border rounded-lg p-0.5 self-center">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === "table" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      setViewMode("table");
+                      localStorage.setItem("transactions-view", "table");
+                    }}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Lista</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === "cards" ? "default" : "ghost"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      setViewMode("cards");
+                      localStorage.setItem("transactions-view", "cards");
+                    }}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Cards</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </div>
       </div>
 
@@ -168,6 +218,7 @@ export default function TransactionsPage() {
           onEdit={handleEdit}
           onDelete={fetchTransactions}
           onTogglePaid={fetchTransactions}
+          viewMode={viewMode}
         />
         <Pagination
           page={pagination.page}
