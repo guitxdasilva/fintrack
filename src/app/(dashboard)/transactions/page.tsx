@@ -40,6 +40,7 @@ export default function TransactionsPage() {
     paymentType: "",
   });
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
     limit: 10,
@@ -61,7 +62,7 @@ export default function TransactionsPage() {
       params.set("month", String(filters.month));
       params.set("year", String(filters.year));
       params.set("page", String(page));
-      params.set("limit", "10");
+      params.set("limit", String(limit));
 
       const res = await fetch(`/api/transactions?${params.toString()}`);
       const json = await res.json();
@@ -76,7 +77,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters, page]);
+  }, [filters, page, limit]);
 
   useEffect(() => {
     fetchTransactions();
@@ -85,6 +86,11 @@ export default function TransactionsPage() {
   // Reset to page 1 when filters change
   const handleFilterChange = useCallback((newFilters: FilterValues) => {
     setFilters(newFilters);
+    setPage(1);
+  }, []);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    setLimit(newLimit);
     setPage(1);
   }, []);
 
@@ -168,6 +174,8 @@ export default function TransactionsPage() {
           totalPages={pagination.totalPages}
           total={pagination.total}
           onPageChange={setPage}
+          limit={limit}
+          onLimitChange={handleLimitChange}
         />
       </div>
 
