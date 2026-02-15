@@ -1,16 +1,18 @@
 "use client";
 
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, HelpCircle } from "lucide-react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/common/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/common/components/ui/avatar";
 import { ThemeToggle } from "@/common/components/ThemeToggle";
+import { startTourManually } from "@/common/components/OnboardingTour";
 import { getInitials } from "@/lib/utils";
 
 interface DashboardHeaderProps {
@@ -21,11 +23,13 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ userName, userEmail }: DashboardHeaderProps) {
   return (
     <>
-      <ThemeToggle className="size-9" />
+      <div data-tour="theme-toggle">
+        <ThemeToggle className="size-9" />
+      </div>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-600">
+          <button data-tour="user-menu" className="flex items-center gap-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 p-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 dark:focus-visible:ring-slate-600">
             <Avatar className="size-8 rounded-lg">
               <AvatarFallback className="rounded-lg text-xs">
                 {getInitials(userName)}
@@ -58,6 +62,14 @@ export function DashboardHeader({ userName, userEmail }: DashboardHeaderProps) {
               <span className="ml-2">Configurações</span>
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={startTourManually}
+            className="cursor-pointer"
+          >
+            <HelpCircle className="size-4" />
+            <span className="ml-2">Tour Guiado</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="cursor-pointer"

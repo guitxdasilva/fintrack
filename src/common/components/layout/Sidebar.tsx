@@ -10,7 +10,6 @@ import {
   CreditCard,
   TrendingUp,
   PiggyBank,
-  Settings,
 } from "lucide-react";
 import {
   Sidebar as ShadcnSidebar,
@@ -29,36 +28,37 @@ const navItems = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
+    tourId: "nav-dashboard",
   },
   {
     title: "Transações",
     url: "/transactions",
     icon: ArrowLeftRight,
+    tourId: "nav-transactions",
   },
   {
     title: "Categorias",
     url: "/categories",
     icon: Tag,
+    tourId: "nav-categories",
   },
   {
     title: "Cartões",
     url: "/cards",
     icon: CreditCard,
+    tourId: "nav-cards",
   },
   {
     title: "Orçamento",
     url: "/budget",
     icon: PiggyBank,
+    tourId: "nav-budget",
   },
   {
     title: "Metas",
     url: "/goals",
     icon: Target,
-  },
-  {
-    title: "Configurações",
-    url: "/settings",
-    icon: Settings,
+    tourId: "nav-goals",
   },
 ];
 
@@ -66,7 +66,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof ShadcnSideb
   const pathname = usePathname();
 
   return (
-    <ShadcnSidebar collapsible="icon" {...props}>
+    <ShadcnSidebar collapsible="icon" {...props} data-tour="sidebar">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -96,7 +96,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof ShadcnSideb
             {navItems.map((item) => {
               const isActive = pathname === item.url || pathname?.startsWith(item.url + "/");
               return (
-                <SidebarMenuItem key={item.url}>
+                <SidebarMenuItem key={item.url} data-tour={item.tourId}>
                   <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
                     <Link href={item.url}>
                       <item.icon />
