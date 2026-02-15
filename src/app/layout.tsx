@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "FinTrack - Dashboard Financeiro Pessoal",
   description:
     "Controle suas finanças pessoais com gráficos interativos, categorias e metas financeiras.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
