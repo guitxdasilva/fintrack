@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TrendingUp } from "lucide-react";
+import Image from "next/image";
 import { RegisterForm } from "@/modules/auth/components/RegisterForm";
 import { ThemeToggle } from "@/common/components/ThemeToggle";
 
@@ -12,11 +12,8 @@ export default function RegisterPage() {
         <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl translate-y-1/2 -translate-x-1/2" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
-        <div className="flex items-center gap-2 relative">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
-            <TrendingUp className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold">FinTrack</span>
+        <div className="relative">
+          <Image src="/finplanix_name_icon.png" alt="Finplanix" width={240} height={56} className="h-14 w-auto" />
         </div>
 
         <div className="space-y-4 relative">
@@ -30,7 +27,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="text-sm text-gray-500 relative">
-          &copy; 2026 FinTrack
+          &copy; 2026 Finplanix
         </p>
       </div>
 
@@ -40,11 +37,8 @@ export default function RegisterPage() {
         </div>
         <div className="w-full max-w-md space-y-6">
           <div className="flex items-center gap-2 lg:hidden justify-center mb-4">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
-                <TrendingUp className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">FinTrack</span>
+            <Link href="/">
+              <Image src="/finplanix_name_icon.png" alt="Finplanix" width={200} height={48} className="h-12 w-auto" />
             </Link>
           </div>
           <RegisterForm />

@@ -1,4 +1,4 @@
-# 💰 FinTrack — Dashboard Financeiro Pessoal
+# 💰 Finplanix — Dashboard Financeiro Pessoal
 
 <p align="center">
   <strong>Controle suas finanças com dashboard interativo, gráficos, categorias, orçamento e metas.</strong>
@@ -97,8 +97,8 @@ src/
 
 ```bash
 # Clone o repositório
-git clone https://github.com/guitxdasilva/fintrack.git
-cd fintrack
+git clone https://github.com/guitxdasilva/finplanix.git
+cd finplanix
 
 # Instale as dependências
 npm install
@@ -111,7 +111,7 @@ cp .env.example .env
 
 ```env
 # DATABASE
-DATABASE_URL="postgresql://user:password@localhost:5432/fintrack?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/finplanix?schema=public"
 
 # NEXTAUTH
 NEXTAUTH_SECRET="sua-chave-secreta-aqui"

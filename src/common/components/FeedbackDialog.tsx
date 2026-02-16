@@ -109,7 +109,7 @@ export function FeedbackDialog({ open, onOpenChange }: FeedbackDialogProps) {
             </div>
             <h3 className="text-xl font-semibold mb-2">Obrigado pelo feedback!</h3>
             <p className="text-sm text-muted-foreground mb-6">
-              Sua opinião é muito importante para melhorar o FinTrack.
+              Sua opinião é muito importante para melhorar o Finplanix.
             </p>
             <Button onClick={handleClose} variant="outline">
               Fechar

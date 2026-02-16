@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
-  TrendingUp,
   ArrowRight,
   BarChart3,
   Target,
@@ -30,12 +30,7 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/25">
-              <TrendingUp className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">FinTrack</span>
-          </div>
+          <Image src="/finplanix_name_icon.png" alt="Finplanix" width={240} height={56} className="h-14 w-auto" />
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle className="size-9" />
             <Link
@@ -384,13 +379,10 @@ export default function Home() {
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-indigo-600">
-                <TrendingUp className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-semibold">FinTrack</span>
+              <Image src="/finplanix_name_icon.png" alt="Finplanix" width={160} height={40} className="h-10 w-auto" />
             </div>
             <p className="text-sm text-gray-400 dark:text-gray-500">
-              &copy; 2026 FinTrack. Feito com Next.js, TypeScript e Tailwind CSS.
+              &copy; 2026 Finplanix. Feito com Next.js, TypeScript e Tailwind CSS.
             </p>
           </div>
         </div>

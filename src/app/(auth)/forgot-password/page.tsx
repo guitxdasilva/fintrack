@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TrendingUp } from "lucide-react";
+import Image from "next/image";
 import { ForgotPasswordForm } from "@/modules/auth/components/ForgotPasswordForm";
 import { ThemeToggle } from "@/common/components/ThemeToggle";
 
@@ -13,10 +13,7 @@ export default function ForgotPasswordPage() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
         <div className="flex items-center gap-2 relative">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
-            <TrendingUp className="h-5 w-5 text-white" />
-          </div>
-          <span className="text-xl font-bold">FinTrack</span>
+          <Image src="/finplanix_name_icon.png" alt="Finplanix" width={240} height={56} className="h-14 w-auto" />
         </div>
 
         <div className="space-y-4 relative">
@@ -30,7 +27,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <p className="text-sm text-gray-500 relative">
-          &copy; 2026 FinTrack
+          &copy; 2026 Finplanix
         </p>
       </div>
 
@@ -40,11 +37,8 @@ export default function ForgotPasswordPage() {
         </div>
         <div className="w-full max-w-md space-y-6">
           <div className="flex items-center gap-2 lg:hidden justify-center mb-4">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
-                <TrendingUp className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">FinTrack</span>
+            <Link href="/">
+              <Image src="/finplanix_name_icon.png" alt="Finplanix" width={200} height={48} className="h-12 w-auto" />
             </Link>
           </div>
           <ForgotPasswordForm />

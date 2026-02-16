@@ -10,7 +10,7 @@ export function ResetPasswordEmail({ userName, resetUrl }: ResetPasswordEmailPro
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redefinir Senha - FinTrack</title>
+  <title>Redefinir Senha - Finplanix</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -26,7 +26,7 @@ export function ResetPasswordEmail({ userName, resetUrl }: ResetPasswordEmailPro
                     <span style="color: white; font-size: 18px; font-weight: bold;">📈</span>
                   </td>
                   <td style="padding-left: 8px; font-size: 20px; font-weight: bold; color: #0f172a;">
-                    FinTrack
+                    Finplanix
                   </td>
                 </tr>
               </table>
@@ -80,7 +80,7 @@ export function ResetPasswordEmail({ userName, resetUrl }: ResetPasswordEmailPro
           <tr>
             <td align="center" style="padding-top: 24px;">
               <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-                &copy; 2026 FinTrack. Todos os direitos reservados.
+                &copy; 2026 Finplanix. Todos os direitos reservados.
               </p>
             </td>
           </tr>

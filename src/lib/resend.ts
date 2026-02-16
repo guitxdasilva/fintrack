@@ -27,7 +27,7 @@ export async function sendEmail({
   const transporter = getMailTransporter();
 
   return transporter.sendMail({
-    from: `FinTrack <${process.env.SMTP_EMAIL}>`,
+    from: `Finplanix <${process.env.SMTP_EMAIL}>`,
     to,
     subject,
     html,

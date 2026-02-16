@@ -87,7 +87,7 @@ export function feedbackNotificationEmail({
           <tr>
             <td style="padding: 16px 32px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0; font-size: 12px; color: #9ca3af; text-align: center;">
-                FinTrack — Dashboard Financeiro
+                Finplanix — Dashboard Financeiro
               </p>
             </td>
           </tr>

@@ -9,11 +9,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "FinTrack - Dashboard Financeiro Pessoal",
+  title: "Finplanix - Dashboard Financeiro Pessoal",
   description:
     "Controle suas finanças pessoais com gráficos interativos, categorias e metas financeiras.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/favicon.ico",
   },
 };
 

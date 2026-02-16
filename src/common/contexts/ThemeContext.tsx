@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 function getInitialTheme(): Theme {
   if (typeof window !== "undefined") {
-    const saved = localStorage.getItem("fintrack-theme") as Theme;
+    const saved = localStorage.getItem("finplanix-theme") as Theme;
     if (saved) return saved;
   }
   return "dark";
@@ -24,7 +24,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("fintrack-theme", theme);
+    localStorage.setItem("finplanix-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => {

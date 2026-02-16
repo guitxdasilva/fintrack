@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       try {
         await sendEmail({
           to: adminEmail,
-          subject: `[FinTrack] Novo feedback: ${typeLabel(result.data.type)}`,
+          subject: `[Finplanix] Novo feedback: ${typeLabel(result.data.type)}`,
           html: feedbackNotificationEmail({
             userName: feedback.user.name,
             userEmail: feedback.user.email,

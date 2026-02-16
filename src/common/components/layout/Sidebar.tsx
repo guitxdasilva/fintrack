@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -8,7 +9,6 @@ import {
   Tag,
   Target,
   CreditCard,
-  TrendingUp,
   PiggyBank,
 } from "lucide-react";
 import {
@@ -72,17 +72,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof ShadcnSideb
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground aspect-square size-8 shadow-sm">
-                  <TrendingUp className="size-4" />
-                </div>
-                <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-                    FinTrack
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Dashboard Financeiro
-                  </span>
-                </div>
+                <Image
+                  src="/finplanix_name_icon.png"
+                  alt="Finplanix"
+                  width={200}
+                  height={48}
+                  className="h-12 w-auto"
+                />
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

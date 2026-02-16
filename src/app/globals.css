@@ -151,7 +151,7 @@ body {
 }
 
 /* Driver.js tour customization */
-.driver-popover.fintrack-tour-popover {
+.driver-popover.finplanix-tour-popover {
   background: var(--card);
   color: var(--card-foreground);
   border: 1px solid var(--border);
@@ -164,7 +164,7 @@ body {
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-title {
+.driver-popover.finplanix-tour-popover .driver-popover-title {
   font-size: 15px;
   font-weight: 600;
   color: var(--foreground);
@@ -172,24 +172,24 @@ body {
   margin-bottom: 6px;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-description {
+.driver-popover.finplanix-tour-popover .driver-popover-description {
   font-size: 13px;
   color: var(--muted-foreground);
   line-height: 1.6;
   margin: 0;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-progress-text {
+.driver-popover.finplanix-tour-popover .driver-popover-progress-text {
   font-size: 11px;
   color: var(--muted-foreground);
   font-weight: 500;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-footer {
+.driver-popover.finplanix-tour-popover .driver-popover-footer {
   margin-top: 16px;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-prev-btn {
+.driver-popover.finplanix-tour-popover .driver-popover-prev-btn {
   background: var(--secondary);
   color: var(--secondary-foreground);
   border: 1px solid var(--border);
@@ -202,12 +202,12 @@ body {
   cursor: pointer;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-prev-btn:hover {
+.driver-popover.finplanix-tour-popover .driver-popover-prev-btn:hover {
   background: var(--accent);
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-next-btn,
-.driver-popover.fintrack-tour-popover button.driver-popover-close-btn-text {
+.driver-popover.finplanix-tour-popover .driver-popover-next-btn,
+.driver-popover.finplanix-tour-popover button.driver-popover-close-btn-text {
   background: var(--primary);
   color: var(--primary-foreground);
   border: none;
@@ -220,29 +220,29 @@ body {
   cursor: pointer;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-next-btn:hover,
-.driver-popover.fintrack-tour-popover button.driver-popover-close-btn-text:hover {
+.driver-popover.finplanix-tour-popover .driver-popover-next-btn:hover,
+.driver-popover.finplanix-tour-popover button.driver-popover-close-btn-text:hover {
   opacity: 0.9;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-close-btn {
+.driver-popover.finplanix-tour-popover .driver-popover-close-btn {
   color: var(--muted-foreground);
   transition: color 0.15s ease;
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-close-btn:hover {
+.driver-popover.finplanix-tour-popover .driver-popover-close-btn:hover {
   color: var(--foreground);
 }
 
-.driver-popover.fintrack-tour-popover .driver-popover-arrow-side-left {
+.driver-popover.finplanix-tour-popover .driver-popover-arrow-side-left {
   border-right-color: var(--card);
 }
-.driver-popover.fintrack-tour-popover .driver-popover-arrow-side-right {
+.driver-popover.finplanix-tour-popover .driver-popover-arrow-side-right {
   border-left-color: var(--card);
 }
-.driver-popover.fintrack-tour-popover .driver-popover-arrow-side-top {
+.driver-popover.finplanix-tour-popover .driver-popover-arrow-side-top {
   border-bottom-color: var(--card);
 }
-.driver-popover.fintrack-tour-popover .driver-popover-arrow-side-bottom {
+.driver-popover.finplanix-tour-popover .driver-popover-arrow-side-bottom {
   border-top-color: var(--card);
 }

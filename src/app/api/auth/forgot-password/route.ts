@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
     await sendEmail({
       to: user.email,
-      subject: "Redefinir sua senha - FinTrack",
+      subject: "Redefinir sua senha - Finplanix",
       html: ResetPasswordEmail({
         userName: user.name,
         resetUrl,

@@ -11,7 +11,7 @@ const TOUR_STEPS: DriveStep[] = [
     popover: {
       title: "📍 Menu de Navegação",
       description:
-        "Aqui fica o menu principal. Use para navegar entre as seções do FinTrack.",
+        "Aqui fica o menu principal. Use para navegar entre as seções do Finplanix.",
       side: "right",
       align: "start",
     },
@@ -99,7 +99,7 @@ const TOUR_STEPS: DriveStep[] = [
     popover: {
       title: "🎉 Tudo Pronto!",
       description:
-        "Você já conhece o FinTrack! Comece adicionando suas categorias, cartões e transações. Boas finanças! 💪",
+        "Você já conhece o Finplanix! Comece adicionando suas categorias, cartões e transações. Boas finanças! 💪",
     },
   },
 ];
@@ -148,7 +148,7 @@ export function OnboardingTour() {
         overlayColor: "black",
         stagePadding: 4,
         stageRadius: 8,
-        popoverClass: "fintrack-tour-popover",
+        popoverClass: "finplanix-tour-popover",
         progressText: "{{current}} de {{total}}",
         nextBtnText: "Próximo",
         prevBtnText: "Anterior",
@@ -181,7 +181,7 @@ export function startTourManually() {
     overlayColor: "black",
     stagePadding: 4,
     stageRadius: 8,
-    popoverClass: "fintrack-tour-popover",
+    popoverClass: "finplanix-tour-popover",
     progressText: "{{current}} de {{total}}",
     nextBtnText: "Próximo",
     prevBtnText: "Anterior",

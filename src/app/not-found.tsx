@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TrendingUp, Home, ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import { Home, ArrowLeft } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 
 export default function NotFound() {
@@ -15,10 +16,7 @@ export default function NotFound() {
       <div className="absolute bottom-1/3 -right-20 h-72 w-72 rounded-full bg-blue-500/5 blur-3xl" />
 
       <div className="flex items-center gap-2 mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-600">
-          <TrendingUp className="h-5 w-5 text-white" />
-        </div>
-        <span className="text-xl font-bold">FinTrack</span>
+        <Image src="/finplanix_name_icon.png" alt="Finplanix" width={200} height={48} className="h-12 w-auto" />
       </div>
 
       <div className="text-center space-y-4 animate-in fade-in zoom-in-95 duration-500 delay-150">
