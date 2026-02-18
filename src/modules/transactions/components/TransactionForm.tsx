@@ -439,7 +439,7 @@ export function TransactionForm({
               {cards.length > 0 && (
                 <div className="space-y-2">
                   <Label>Cartão</Label>
-                  <Select value={cardId} onValueChange={setCardId}>
+                  <Select value={cardId} onValueChange={(v) => setCardId(v === "none" ? "" : v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Selecione o cartão (opcional)" />
                     </SelectTrigger>

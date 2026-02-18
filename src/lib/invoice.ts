@@ -90,3 +90,43 @@ export function formatClosingDayDescription(
   }
   return `Dia ${closingDayValue}`;
 }
+
+/**
+ * Determina em qual mês de fatura uma compra cai, e retorna o deslocamento
+ * de meses necessário para que a data da transação reflita o mês de cobrança.
+ *
+ * Regra de cartão de crédito brasileiro:
+ * - Compra até o dia de fechamento → entra na fatura do mês atual → cobrada no mês seguinte (+1)
+ * - Compra após o dia de fechamento → entra na fatura do mês seguinte → cobrada 2 meses depois (+2)
+ *
+ * O offset retornado é relativo ao mês da compra.
+ *
+ * @param purchaseDate - data da compra
+ * @param closingDayType - "FIXED" ou "BEFORE_END"
+ * @param closingDayValue - dia fixo (1-31) ou offset (1-10)
+ * @returns monthOffset - quantos meses adiantar a data para refletir o mês de cobrança
+ */
+export function getCreditCardMonthOffset(
+  purchaseDate: Date,
+  closingDayType: string,
+  closingDayValue: number
+): number {
+  const month = purchaseDate.getMonth();
+  const year = purchaseDate.getFullYear();
+  const purchaseDay = purchaseDate.getDate();
+
+  const effectiveClosing = getEffectiveClosingDay(
+    closingDayType,
+    closingDayValue,
+    month,
+    year
+  );
+
+  if (purchaseDay <= effectiveClosing) {
+    // Compra antes ou no dia do fechamento → fatura do mês atual → cobrada no próximo mês
+    return 1;
+  } else {
+    // Compra após o fechamento → fatura do próximo mês → cobrada em 2 meses
+    return 2;
+  }
+}

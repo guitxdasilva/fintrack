@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getCreditCardMonthOffset } from "@/lib/invoice";
 
 const createTransactionSchema = z.object({
   amount: z.number().positive("Valor deve ser positivo"),
@@ -147,15 +148,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate card belongs to user if provided
+    let card: { id: string; closingDayType: string | null; closingDayValue: number | null } | null = null;
+    if (cardId) {
+      card = await prisma.card.findFirst({
+        where: { id: cardId, userId: session.user.id },
+        select: { id: true, closingDayType: true, closingDayValue: true },
+      });
+      if (!card) {
+        return NextResponse.json(
+          { error: "Cartão não encontrado" },
+          { status: 404 }
+        );
+      }
+    }
+
+    // Calculate month offset for credit card purchases based on closing date
+    // E.g.: purchase before closing → billed next month (+1)
+    //        purchase after closing  → billed in 2 months (+2)
+    let creditMonthOffset = 0;
+    if (cardType === "CREDIT" && card?.closingDayType && card?.closingDayValue) {
+      creditMonthOffset = getCreditCardMonthOffset(
+        new Date(date),
+        card.closingDayType,
+        card.closingDayValue
+      );
+    }
+
     // Handle installment creation
     if (type === "EXPENSE" && installments && installments >= 2) {
       const installmentAmount = Math.round((amount / installments) * 100) / 100;
+      // Last installment absorbs rounding difference so total matches original amount
+      const lastInstallmentAmount = Math.round((amount - installmentAmount * (installments - 1)) * 100) / 100;
       const groupId = globalThis.crypto.randomUUID();
       const baseDate = new Date(date);
 
       const data = Array.from({ length: installments }, (_, i) => {
         const installmentDate = new Date(baseDate);
-        installmentDate.setMonth(installmentDate.getMonth() + i);
+        // creditMonthOffset shifts dates to the billing month (e.g., +1 if before closing)
+        installmentDate.setMonth(installmentDate.getMonth() + i + creditMonthOffset);
         // Handle month overflow (e.g., Jan 31 -> Feb 28)
         const maxDay = new Date(
           installmentDate.getFullYear(),
@@ -167,7 +198,7 @@ export async function POST(request: NextRequest) {
         }
 
         return {
-          amount: installmentAmount,
+          amount: i === installments - 1 ? lastInstallmentAmount : installmentAmount,
           type: type as "INCOME" | "EXPENSE",
           description: `${description} (${i + 1}/${installments})`,
           date: installmentDate,
@@ -233,12 +264,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // For credit card purchases, shift the date to the billing month
+    const transactionDate = new Date(date);
+    if (creditMonthOffset > 0) {
+      transactionDate.setMonth(transactionDate.getMonth() + creditMonthOffset);
+      const maxDay = new Date(
+        transactionDate.getFullYear(),
+        transactionDate.getMonth() + 1,
+        0
+      ).getDate();
+      if (transactionDate.getDate() > maxDay) {
+        transactionDate.setDate(maxDay);
+      }
+    }
+
     const transaction = await prisma.transaction.create({
       data: {
         amount,
         type,
         description,
-        date: new Date(date),
+        date: transactionDate,
         userId: session.user.id,
         categoryId,
         paymentType: paymentType || null,
