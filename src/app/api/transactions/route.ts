@@ -14,6 +14,7 @@ const createTransactionSchema = z.object({
   cardType: z.enum(["CREDIT", "DEBIT"]).optional(),
   installments: z.number().int().min(2).max(48).optional(),
   isFixed: z.boolean().optional(),
+  fixedMonths: z.number().int().min(2).max(60).optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { amount, type, description, date, categoryId, paymentType, cardId, cardType, installments, isFixed } = result.data;
+    const { amount, type, description, date, categoryId, paymentType, cardId, cardType, installments, isFixed, fixedMonths } = result.data;
 
     const category = await prisma.category.findFirst({
       where: { id: categoryId, userId: session.user.id },
@@ -186,6 +187,48 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         { message: `${created.count} parcelas criadas com sucesso`, count: created.count },
+        { status: 201 }
+      );
+    }
+
+    // Handle fixed recurring expense creation
+    if (isFixed && fixedMonths && fixedMonths >= 2) {
+      const groupId = globalThis.crypto.randomUUID();
+      const baseDate = new Date(date);
+
+      const data = Array.from({ length: fixedMonths }, (_, i) => {
+        const recurringDate = new Date(baseDate);
+        recurringDate.setMonth(recurringDate.getMonth() + i);
+        const maxDay = new Date(
+          recurringDate.getFullYear(),
+          recurringDate.getMonth() + 1,
+          0
+        ).getDate();
+        if (recurringDate.getDate() > maxDay) {
+          recurringDate.setDate(maxDay);
+        }
+
+        return {
+          amount,
+          type: type as "INCOME" | "EXPENSE",
+          description,
+          date: recurringDate,
+          userId: session.user!.id!,
+          categoryId,
+          paymentType: null as string | null,
+          cardId: null as string | null,
+          cardType: null as string | null,
+          installments: fixedMonths,
+          currentInstallment: i + 1,
+          installmentGroupId: groupId,
+          isFixed: true,
+        };
+      });
+
+      const created = await prisma.transaction.createMany({ data });
+
+      return NextResponse.json(
+        { message: `Despesa fixa criada para ${created.count} meses`, count: created.count },
         { status: 201 }
       );
     }

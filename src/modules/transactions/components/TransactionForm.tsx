@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CalendarIcon, Pin, ShoppingBag } from "lucide-react";
+import { CalendarIcon, Pin, ShoppingBag, Repeat } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -76,6 +76,7 @@ export function TransactionForm({
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState("2");
   const [isFixed, setIsFixed] = useState(false);
+  const [fixedMonths, setFixedMonths] = useState("");
   const [date, setDate] = useState<Date>(new Date());
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
@@ -93,6 +94,7 @@ export function TransactionForm({
       setIsInstallment(false);
       setInstallments("2");
       setIsFixed(transaction.isFixed || false);
+      setFixedMonths("");
       setDate(new Date(transaction.date));
     } else {
       setType(defaultType);
@@ -105,6 +107,7 @@ export function TransactionForm({
       setIsInstallment(false);
       setInstallments("2");
       setIsFixed(false);
+      setFixedMonths("");
       setDate(new Date());
     }
   }, [transaction, open]);
@@ -178,6 +181,9 @@ export function TransactionForm({
         ...(type === "EXPENSE" && !isFixed && isInstallment && !isEditing
           ? { installments: parseInt(installments) }
           : {}),
+        ...(type === "EXPENSE" && isFixed && fixedMonths && parseInt(fixedMonths) >= 2 && !isEditing
+          ? { fixedMonths: parseInt(fixedMonths) }
+          : {}),
       };
 
       const url = isEditing
@@ -202,7 +208,9 @@ export function TransactionForm({
           ? "Transação atualizada com sucesso"
           : type === "EXPENSE" && isInstallment
             ? `Despesa parcelada em ${installments}x criada com sucesso`
-            : "Transação criada com sucesso"
+            : type === "EXPENSE" && isFixed && fixedMonths && parseInt(fixedMonths) >= 2
+              ? `Despesa fixa criada para ${fixedMonths} meses`
+              : "Transação criada com sucesso"
       );
       onOpenChange(false);
       onSuccess();
@@ -298,6 +306,39 @@ export function TransactionForm({
                 <Pin className="h-4 w-4" />
                 Fixa
               </Button>
+            </div>
+          )}
+
+          {/* Fixed months - recurrence for fixed expenses */}
+          {type === "EXPENSE" && isFixed && !isEditing && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Repeat className="h-4 w-4 text-blue-500" />
+                <Label htmlFor="fixedMonths">Repetir por quantos meses?</Label>
+              </div>
+              <Input
+                id="fixedMonths"
+                type="number"
+                min="2"
+                max="60"
+                placeholder="Ex: 12 (deixe vazio para criar só uma vez)"
+                value={fixedMonths}
+                onChange={(e) => setFixedMonths(e.target.value)}
+              />
+              {fixedMonths && parseInt(fixedMonths) >= 2 && amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Serão criadas <span className="font-medium">{parseInt(fixedMonths)} transações</span> de{" "}
+                  <span className="font-medium">{formatCurrency(parseFloat(amount))}</span> cada
+                  {parseInt(fixedMonths) > 1 && (
+                    <span>
+                      , totalizando{" "}
+                      <span className="font-medium">
+                        {formatCurrency(parseFloat(amount) * parseInt(fixedMonths))}
+                      </span>
+                    </span>
+                  )}
+                </p>
+              )}
             </div>
           )}
 

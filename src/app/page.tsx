@@ -23,6 +23,14 @@ import {
   UserCog,
 } from "lucide-react";
 import { ThemeToggle } from "@/common/components/ThemeToggle";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/common/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function Home() {
   return (
@@ -30,7 +38,7 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-gray-200 dark:border-white/5 bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <Image src="/finplanix_name_icon.png" alt="Finplanix" width={240} height={56} className="h-14 w-auto" />
+          <Image src="/finplanix_name_icon.png" alt="Finplanix" width={180} height={40} className="h-14 w-auto" />
           <div className="flex items-center gap-2 sm:gap-3">
             <ThemeToggle className="size-9" />
             <Link
@@ -65,15 +73,15 @@ export default function Home() {
             </div>
 
             <h1 className="mx-auto max-w-4xl text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              Suas finanças no{" "}
+              Seu controle financeiro{" "}
               <span className="bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent">
-                controle total
+                sem planilhas
               </span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-500 dark:text-gray-400 sm:text-xl leading-relaxed">
-              Dashboard interativo, cartões de crédito, orçamento por categoria,
-              metas financeiras e muito mais. Tudo em um só lugar.
+              Registre gastos, acompanhe metas e entenda para onde seu dinheiro
+              vai &mdash; tudo em um só lugar.
             </p>
 
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -100,6 +108,10 @@ export default function Home() {
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <span>Sem cartão de crédito</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                 <span>Sem anúncios</span>
               </div>
               <div className="flex items-center gap-2">
@@ -110,8 +122,82 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Features Grid ── */}
+        {/* ── App Screenshots ── */}
         <section className="border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-gray-900/50">
+          <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+            <div className="mb-14 text-center">
+              <h2 className="text-3xl font-bold sm:text-4xl">
+                Veja o app em{" "}
+                <span className="text-indigo-500 dark:text-indigo-400">ação</span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-gray-500 dark:text-gray-400">
+                Interface moderna e intuitiva para você ter controle total das suas finanças
+              </p>
+            </div>
+
+            <Carousel
+              opts={{ align: "start", loop: true }}
+              plugins={[
+                Autoplay({ delay: 4000, stopOnInteraction: true }),
+              ]}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-4">
+                {[
+                  {
+                    src: "/screenshots/dashboard.png",
+                    alt: "Dashboard - Visão geral das finanças",
+                    label: "Dashboard",
+                  },
+                  {
+                    src: "/screenshots/transactions.png",
+                    alt: "Transações - Controle de receitas e despesas",
+                    label: "Transações",
+                  },
+                  {
+                    src: "/screenshots/categories.png",
+                    alt: "Categorias - Organização personalizada",
+                    label: "Categorias",
+                  },
+                  {
+                    src: "/screenshots/goals.png",
+                    alt: "Metas - Acompanhamento de objetivos",
+                    label: "Metas",
+                  },
+                ].map((screenshot) => (
+                  <CarouselItem key={screenshot.label} className="pl-4 basis-full">
+                    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/80 shadow-lg shadow-black/5 dark:shadow-black/30 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/20">
+                      <div className="overflow-hidden rounded-t-2xl">
+                        <Image
+                          src={screenshot.src}
+                          alt={screenshot.alt}
+                          width={1920}
+                          height={1080}
+                          className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.02]"
+                        />
+                      </div>
+                      <div className="px-6 py-5">
+                        <p className="text-base font-semibold text-gray-700 dark:text-gray-200">
+                          {screenshot.label}
+                        </p>
+                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+                          {screenshot.alt}
+                        </p>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <CarouselPrevious className="static translate-y-0 h-10 w-10 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800" />
+                <CarouselNext className="static translate-y-0 h-10 w-10 rounded-full border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800" />
+              </div>
+            </Carousel>
+          </div>
+        </section>
+
+        {/* ── Features Grid ── */}
+        <section className="border-t border-gray-200 dark:border-white/5">
           <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
             <div className="mb-14 text-center">
               <h2 className="text-3xl font-bold sm:text-4xl">
