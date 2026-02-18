@@ -21,6 +21,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/common/components/ui/sidebar";
 
 const navItems = [
@@ -64,6 +65,8 @@ const navItems = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof ShadcnSidebar>) {
   const pathname = usePathname();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   return (
     <ShadcnSidebar collapsible="icon" {...props} data-tour="sidebar">
@@ -72,13 +75,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof ShadcnSideb
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <Image
-                  src="/finplanix_name_icon.png"
-                  alt="Finplanix"
-                  width={200}
-                  height={48}
-                  className="h-12 w-auto"
-                />
+                {isCollapsed ? (
+                  <Image
+                    src="/finplanix_icon_transparent.png"
+                    alt="Finplanix"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8"
+                  />
+                ) : (
+                  <Image
+                    src="/finplanix_name_icon.png"
+                    alt="Finplanix"
+                    width={200}
+                    height={48}
+                    className="h-12 w-auto"
+                  />
+                )}
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
