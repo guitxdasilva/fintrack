@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Download, Copy, ArrowUpCircle, ArrowDownCircle, List, LayoutGrid, Upload } from "lucide-react";
+import { Download, Copy, ArrowUpCircle, ArrowDownCircle, List, LayoutGrid, Upload, FileText, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { TransactionList } from "@/modules/transactions/components/TransactionList";
 import { TransactionForm } from "@/modules/transactions/components/TransactionForm";
@@ -18,6 +18,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/common/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/common/components/ui/dropdown-menu";
 import type { Transaction } from "@/types";
 
 type ViewMode = "table" | "cards";
@@ -121,7 +127,7 @@ export default function TransactionsPage() {
     setFormOpen(true);
   }
 
-  function handleExportCSV() {
+  function handleExport(format: "csv" | "pdf") {
     const params = new URLSearchParams();
     if (filters.type !== "ALL") params.set("type", filters.type);
     if (filters.categoryId) params.set("categoryId", filters.categoryId);
@@ -132,6 +138,7 @@ export default function TransactionsPage() {
     if (filters.paymentType) params.set("paymentType", filters.paymentType);
     params.set("month", String(filters.month));
     params.set("year", String(filters.year));
+    params.set("format", format);
 
     window.open(`/api/transactions/export?${params.toString()}`, "_blank");
   }
@@ -154,10 +161,24 @@ export default function TransactionsPage() {
             <Copy className="mr-2 h-4 w-4" />
             Duplicar Mês
           </Button>
-          <Button onClick={handleExportCSV} variant="outline" size="lg">
-            <Download className="mr-2 h-4 w-4" />
-            Exportar CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="lg">
+                <Download className="mr-2 h-4 w-4" />
+                Exportar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("csv")}>
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Exportar CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                <FileText className="mr-2 h-4 w-4" />
+                Exportar PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             onClick={() => handleNewTransaction("INCOME")}
             size="lg"

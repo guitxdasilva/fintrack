@@ -12,6 +12,7 @@ import {
   CreditCard,
   PiggyBank,
   FileDown,
+  FileUp,
   CheckCircle2,
   Pin,
   Receipt,
@@ -21,6 +22,8 @@ import {
   KeyRound,
   GraduationCap,
   UserCog,
+  FileText,
+  Tags,
 } from "lucide-react";
 import { ThemeToggle } from "@/common/components/ThemeToggle";
 import {
@@ -224,7 +227,7 @@ export default function Home() {
                   icon: Wallet,
                   title: "Transações Completas",
                   description:
-                    "Receitas e despesas com filtros avançados (status, cartão, forma de pagamento, fixa/variável), exportação CSV e ações em massa.",
+                    "Receitas e despesas com filtros avançados, importação de extratos bancários (CSV/PDF), exportação CSV e PDF e ações em massa.",
                   color: "text-emerald-500 dark:text-emerald-400",
                   bg: "bg-emerald-500/10",
                   border: "group-hover:border-emerald-500/20",
@@ -233,7 +236,7 @@ export default function Home() {
                   icon: CreditCard,
                   title: "Cartões de Crédito e Débito",
                   description:
-                    "Gerencie seus cartões com limite, bandeira, dia de fechamento e acompanhe faturas mensais.",
+                    "Gerencie seus cartões com limite, bandeira, dia de fechamento, acompanhe faturas e pague a fatura inteira com um clique.",
                   color: "text-violet-500 dark:text-violet-400",
                   bg: "bg-violet-500/10",
                   border: "group-hover:border-violet-500/20",
@@ -335,8 +338,23 @@ export default function Home() {
                 },
                 {
                   icon: FileDown,
-                  label: "Exportar CSV",
-                  detail: "Baixe suas transações",
+                  label: "Exportar CSV & PDF",
+                  detail: "Relatórios completos para download",
+                },
+                {
+                  icon: FileUp,
+                  label: "Importar extratos",
+                  detail: "Nubank, Inter e outros bancos",
+                },
+                {
+                  icon: Tags,
+                  label: "Auto-categorização",
+                  detail: "Categorias detectadas na importação",
+                },
+                {
+                  icon: FileText,
+                  label: "Pagar fatura",
+                  detail: "Marque toda a fatura como paga",
                 },
                 {
                   icon: CheckCircle2,

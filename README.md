@@ -22,8 +22,10 @@
 | 🔐 **Autenticação** | Login e registro seguros com NextAuth.js (JWT + Credentials) |
 | 🔑 **Recuperação de Senha** | Fluxo completo via email (Nodemailer + Gmail SMTP) com token seguro |
 | 📊 **Dashboard** | Visão geral com saldo, gráficos, transações do mês agrupadas por cartão e orçamento |
-| 💸 **Transações** | CRUD com filtros avançados (status, cartão, forma de pagamento, fixa/variável), busca, duplicação em massa e exportação CSV |
-| 💳 **Cartões** | Cartões personalizáveis com dia de fechamento e acompanhamento de faturas |
+| 💸 **Transações** | CRUD com filtros avançados (status, cartão, forma de pagamento, fixa/variável), busca, duplicação em massa, exportação CSV e PDF |
+| 📥 **Importação de Extratos** | Importar transações de CSV ou PDF com suporte a Nubank, Inter e parser genérico. Auto-detecção de categoria por descrição com ajuste individual |
+| 📤 **Exportação PDF** | Relatório em PDF com tabela estilizada, totais, cores por tipo e paginação automática |
+| 💳 **Cartões** | Cartões personalizáveis com dia de fechamento, acompanhamento de faturas e pagamento da fatura inteira com um clique |
 | 💰 **Formas de Pagamento** | Dinheiro, PIX, Cartão, Transferência e Boleto |
 | 🏷️ **Categorias** | Categorias personalizáveis com emojis e cores |
 | 🐷 **Orçamento** | Limites de gastos por categoria com barras de progresso e alertas |
@@ -42,6 +44,7 @@
 | **Backend** | Next.js API Routes, Zod validation |
 | **Banco de Dados** | PostgreSQL (Neon) com Prisma ORM v7 |
 | **Autenticação** | NextAuth.js v5 (beta) |
+| **PDF** | PDFKit (exportação), pdf-parse (importação) |
 | **Email** | Nodemailer 7 + Gmail SMTP |
 | **Deploy** | Vercel |
 
@@ -66,7 +69,7 @@ src/
 │       ├── categories/         # CRUD de categorias
 │       ├── dashboard/          # Dados agregados do dashboard
 │       ├── goals/              # CRUD de metas
-│       └── transactions/       # CRUD, duplicação, exportação CSV
+│       └── transactions/       # CRUD, duplicação, importação, exportação CSV/PDF
 ├── common/
 │   ├── components/
 │   │   ├── layout/             # Sidebar, Header, PageTitle
@@ -75,14 +78,16 @@ src/
 │   │   └── ThemeToggle.tsx     # Alternador de tema
 │   ├── contexts/               # ThemeContext (dark mode)
 │   └── hooks/                  # useDebounce, useMediaQuery, useMobile
-├── lib/                        # Auth config, Prisma client, email utils
+├── lib/
+│   ├── import/                 # Parsers de extrato bancário (Nubank, Inter, Genérico)
+│   └── ...                     # Auth config, Prisma client, email utils, invoice utils
 ├── modules/                    # Feature modules
 │   ├── auth/                   # LoginForm, RegisterForm, ForgotPassword, ResetPassword
 │   ├── cards/                  # CardForm
 │   ├── categories/             # CategoryForm
 │   ├── dashboard/              # BalanceCard, ExpenseChart, MonthTransactions, BudgetOverview
 │   ├── goals/                  # GoalCard, GoalForm, GoalProgress
-│   └── transactions/           # TransactionForm, TransactionFilters, TransactionList
+│   └── transactions/           # TransactionForm, TransactionFilters, TransactionList, ImportDialog
 └── types/                      # TypeScript interfaces e constantes
 ```
 
