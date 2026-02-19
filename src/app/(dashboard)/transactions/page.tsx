@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { Download, Copy, ArrowUpCircle, ArrowDownCircle, List, LayoutGrid } from "lucide-react";
+import { Download, Copy, ArrowUpCircle, ArrowDownCircle, List, LayoutGrid, Upload } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { TransactionList } from "@/modules/transactions/components/TransactionList";
 import { TransactionForm } from "@/modules/transactions/components/TransactionForm";
 import { BulkDuplicateDialog } from "@/modules/transactions/components/BulkDuplicateDialog";
+import { ImportDialog } from "@/modules/transactions/components/ImportDialog";
 import {
   TransactionFilters,
   type FilterValues,
@@ -34,6 +35,7 @@ export default function TransactionsPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [defaultType, setDefaultType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
   const [bulkDuplicateOpen, setBulkDuplicateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
   const [filters, setFilters] = useState<FilterValues>({
@@ -144,6 +146,10 @@ export default function TransactionsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setImportOpen(true)} variant="outline" size="lg">
+            <Upload className="mr-2 h-4 w-4" />
+            Importar
+          </Button>
           <Button onClick={() => setBulkDuplicateOpen(true)} variant="outline" size="lg">
             <Copy className="mr-2 h-4 w-4" />
             Duplicar Mês
@@ -241,6 +247,12 @@ export default function TransactionsPage() {
       <BulkDuplicateDialog
         open={bulkDuplicateOpen}
         onOpenChange={setBulkDuplicateOpen}
+        onSuccess={fetchTransactions}
+      />
+
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
         onSuccess={fetchTransactions}
       />
     </div>

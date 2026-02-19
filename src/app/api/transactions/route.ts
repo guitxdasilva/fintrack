@@ -148,7 +148,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate card belongs to user if provided
     let card: { id: string; closingDayType: string | null; closingDayValue: number | null } | null = null;
     if (cardId) {
       card = await prisma.card.findFirst({
@@ -163,9 +162,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate month offset for credit card purchases based on closing date
-    // E.g.: purchase before closing → billed next month (+1)
-    //        purchase after closing  → billed in 2 months (+2)
     let creditMonthOffset = 0;
     if (cardType === "CREDIT" && card?.closingDayType && card?.closingDayValue) {
       creditMonthOffset = getCreditCardMonthOffset(
@@ -175,19 +171,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle installment creation
     if (type === "EXPENSE" && installments && installments >= 2) {
       const installmentAmount = Math.round((amount / installments) * 100) / 100;
-      // Last installment absorbs rounding difference so total matches original amount
       const lastInstallmentAmount = Math.round((amount - installmentAmount * (installments - 1)) * 100) / 100;
       const groupId = globalThis.crypto.randomUUID();
       const baseDate = new Date(date);
 
       const data = Array.from({ length: installments }, (_, i) => {
         const installmentDate = new Date(baseDate);
-        // creditMonthOffset shifts dates to the billing month (e.g., +1 if before closing)
         installmentDate.setMonth(installmentDate.getMonth() + i + creditMonthOffset);
-        // Handle month overflow (e.g., Jan 31 -> Feb 28)
         const maxDay = new Date(
           installmentDate.getFullYear(),
           installmentDate.getMonth() + 1,
@@ -222,7 +214,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Handle fixed recurring expense creation
     if (isFixed && fixedMonths && fixedMonths >= 2) {
       const groupId = globalThis.crypto.randomUUID();
       const baseDate = new Date(date);
@@ -264,7 +255,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For credit card purchases, shift the date to the billing month
     const transactionDate = new Date(date);
     if (creditMonthOffset > 0) {
       transactionDate.setMonth(transactionDate.getMonth() + creditMonthOffset);

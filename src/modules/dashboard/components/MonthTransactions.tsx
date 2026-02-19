@@ -79,6 +79,7 @@ export function MonthTransactions({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [modalSelectedIds, setModalSelectedIds] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  const [payingInvoice, setPayingInvoice] = useState(false);
 
   function toggleSelection(id: string) {
     setSelectedIds((prev) => {
@@ -121,7 +122,32 @@ export function MonthTransactions({
     }
   }
 
-  // Fetch invoice data when a card with closing day is selected
+  async function handlePayInvoice() {
+    if (!selectedCard) return;
+    setPayingInvoice(true);
+    try {
+      const res = await fetch(
+        `/api/cards/${selectedCard.cardId}/invoice/pay?month=${month}&year=${year}`,
+        { method: "POST" }
+      );
+      const json = await res.json();
+      if (res.ok) {
+        toast.success(json.data?.message || "Fatura paga com sucesso");
+        setModalSelectedIds(new Set());
+        if (selectedCard.hasClosingDay) {
+          fetchInvoice(selectedCard.cardId);
+        }
+        onDataChange?.();
+      } else {
+        toast.error(json.error || "Erro ao pagar fatura");
+      }
+    } catch {
+      toast.error("Erro ao pagar fatura");
+    } finally {
+      setPayingInvoice(false);
+    }
+  }
+
   const fetchInvoice = useCallback(
     async (cardId: string) => {
       setInvoiceLoading(true);
@@ -156,7 +182,6 @@ export function MonthTransactions({
     setModalSelectedIds(new Set());
   }
 
-  // Use invoice transactions if available, otherwise use group transactions
   const activeTransactions = useMemo(() => {
     if (invoiceData) return invoiceData.transactions;
     return selectedCard?.transactions ?? [];
@@ -164,7 +189,14 @@ export function MonthTransactions({
 
   const activeTotal = invoiceData ? invoiceData.total : (selectedCard?.total ?? 0);
 
-  // Compute category chart data for the selected card
+  const hasUnpaidExpenses = useMemo(() => {
+    return activeTransactions.some((t) => t.type === "EXPENSE" && !t.paid);
+  }, [activeTransactions]);
+
+  const unpaidCount = useMemo(() => {
+    return activeTransactions.filter((t) => t.type === "EXPENSE" && !t.paid).length;
+  }, [activeTransactions]);
+
   const cardCategoryData = useMemo(() => {
     if (!selectedCard) return [];
 
@@ -193,8 +225,6 @@ export function MonthTransactions({
     }));
   }, [selectedCard, activeTransactions]);
 
-  // Build a mixed list: non-card transactions as individual items,
-  // card transactions grouped by card
   const { individualItems, cardGroups } = useMemo(() => {
     const individual: Transaction[] = [];
     const groupMap = new Map<string, CardGroup>();
@@ -270,7 +300,6 @@ export function MonthTransactions({
     );
   }
 
-  // Merge into a single sorted list: cards first, then individual transactions by date
   type ListItem =
     | { kind: "card"; data: CardGroup }
     | { kind: "transaction"; data: Transaction };
@@ -292,7 +321,7 @@ export function MonthTransactions({
               : `${individualItems.length} transação(ões)`}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 max-h-[420px] overflow-y-auto">
+        <CardContent className="space-y-2 max-h-105 overflow-y-auto">
           {listItems.map((item) => {
             if (item.kind === "card") {
               const group = item.data;
@@ -471,11 +500,27 @@ export function MonthTransactions({
             </div>
           )}
 
+          {/* Pay invoice button */}
+          {!invoiceLoading && hasUnpaidExpenses && (
+            <Button
+              onClick={handlePayInvoice}
+              disabled={payingInvoice}
+              className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500 text-white"
+            >
+              {payingInvoice ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              Pagar fatura ({unpaidCount} pendente{unpaidCount !== 1 ? "s" : ""})
+            </Button>
+          )}
+
           {/* Category pie chart */}
           {!invoiceLoading && cardCategoryData.length > 0 && (
             <>
               <div className="flex flex-col items-center gap-4 sm:flex-row">
-                <div className="h-[160px] w-[160px] shrink-0">
+                <div className="h-40 w-40 shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
