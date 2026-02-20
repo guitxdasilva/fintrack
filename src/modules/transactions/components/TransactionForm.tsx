@@ -110,7 +110,7 @@ export function TransactionForm({
       setFixedMonths("");
       setDate(new Date());
     }
-  }, [transaction, open]);
+  }, [transaction, open, defaultType]);
 
   useEffect(() => {
     if (!open) return;

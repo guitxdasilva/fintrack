@@ -149,22 +149,22 @@ export default function Home() {
                 {[
                   {
                     src: "/screenshots/dashboard.png",
-                    alt: "Dashboard - Visão geral das finanças",
+                    alt: "Visão geral das finanças",
                     label: "Dashboard",
                   },
                   {
                     src: "/screenshots/transactions.png",
-                    alt: "Transações - Controle de receitas e despesas",
+                    alt: "Controle de receitas e despesas",
                     label: "Transações",
                   },
                   {
                     src: "/screenshots/categories.png",
-                    alt: "Categorias - Organização personalizada",
+                    alt: "Organização personalizada",
                     label: "Categorias",
                   },
                   {
                     src: "/screenshots/goals.png",
-                    alt: "Metas - Acompanhamento de objetivos",
+                    alt: "Acompanhamento de objetivos",
                     label: "Metas",
                   },
                 ].map((screenshot) => (
