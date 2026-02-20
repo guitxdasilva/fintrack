@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, ArrowLeftRight, Check, Circle, CheckCircle2, Loader2, Pin } from "lucide-react";
+import { Pencil, Trash2, ArrowLeftRight, Check, Circle, CheckCircle2, Loader2, Pin, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -34,6 +34,9 @@ interface TransactionListProps {
   onDelete: () => void;
   onTogglePaid?: () => void;
   viewMode?: "table" | "cards";
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  onSort?: (field: string) => void;
 }
 
 export function TransactionList({
@@ -43,6 +46,9 @@ export function TransactionList({
   onDelete,
   onTogglePaid,
   viewMode = "table",
+  sortBy,
+  sortOrder,
+  onSort,
 }: TransactionListProps) {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -58,6 +64,14 @@ export function TransactionList({
       else next.add(id);
       return next;
     });
+  }
+
+  function toggleSelectAll() {
+    if (selectedIds.size === transactions.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(transactions.map((t) => t.id)));
+    }
   }
 
   async function handleConfirmPaid() {
@@ -165,13 +179,63 @@ export function TransactionList({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10">Status</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
+              <TableHead className="w-10">
+                <button
+                  className="h-7 w-7 flex items-center justify-center rounded-md transition-colors hover:bg-muted"
+                  onClick={toggleSelectAll}
+                  title={selectedIds.size === transactions.length ? "Desmarcar todas" : "Selecionar todas"}
+                >
+                  {selectedIds.size === transactions.length ? (
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                  ) : selectedIds.size > 0 ? (
+                    <CheckCircle2 className="h-4 w-4 text-primary/50" />
+                  ) : (
+                    <Circle className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </TableHead>
+              <TableHead>
+                <button className="flex items-center gap-1 hover:text-foreground transition-colors" onClick={() => onSort?.("description")}>
+                  Descrição
+                  {sortBy === "description" ? (
+                    sortOrder === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+                  )}
+                </button>
+              </TableHead>
+              <TableHead>
+                <button className="flex items-center gap-1 hover:text-foreground transition-colors" onClick={() => onSort?.("category")}>
+                  Categoria
+                  {sortBy === "category" ? (
+                    sortOrder === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+                  )}
+                </button>
+              </TableHead>
               <TableHead>Pagamento</TableHead>
               <TableHead>Parcela</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>
+                <button className="flex items-center gap-1 hover:text-foreground transition-colors" onClick={() => onSort?.("date")}>
+                  Data
+                  {sortBy === "date" ? (
+                    sortOrder === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+                  )}
+                </button>
+              </TableHead>
+              <TableHead className="text-right">
+                <button className="flex items-center gap-1 ml-auto hover:text-foreground transition-colors" onClick={() => onSort?.("amount")}>
+                  Valor
+                  {sortBy === "amount" ? (
+                    sortOrder === "asc" ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />
+                  ) : (
+                    <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+                  )}
+                </button>
+              </TableHead>
               <TableHead className="text-right w-25">Ações</TableHead>
             </TableRow>
           </TableHeader>

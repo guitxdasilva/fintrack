@@ -63,6 +63,8 @@ export default function TransactionsPage() {
   });
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
     limit: 10,
@@ -85,6 +87,8 @@ export default function TransactionsPage() {
       params.set("year", String(filters.year));
       params.set("page", String(page));
       params.set("limit", String(limit));
+      params.set("sortBy", sortBy);
+      params.set("sortOrder", sortOrder);
 
       const res = await fetch(`/api/transactions?${params.toString()}`);
       const json = await res.json();
@@ -99,7 +103,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters, page, limit]);
+  }, [filters, page, limit, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchTransactions();
@@ -246,6 +250,17 @@ export default function TransactionsPage() {
           onDelete={fetchTransactions}
           onTogglePaid={fetchTransactions}
           viewMode={viewMode}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
+          onSort={(field) => {
+            if (field === sortBy) {
+              setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+            } else {
+              setSortBy(field);
+              setSortOrder(field === "amount" ? "desc" : "asc");
+            }
+            setPage(1);
+          }}
         />
         <Pagination
           page={pagination.page}

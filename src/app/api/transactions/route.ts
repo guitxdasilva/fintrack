@@ -90,11 +90,23 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
+    const sortBy = searchParams.get("sortBy") || "date";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+
+    const validSortFields: Record<string, unknown> = {
+      date: { date: sortOrder },
+      amount: { amount: sortOrder },
+      description: { description: sortOrder },
+      category: { category: { name: sortOrder } },
+    };
+
+    const orderBy = validSortFields[sortBy] || { date: "desc" };
+
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
         where,
         include: { category: true, card: true },
-        orderBy: { date: "desc" },
+        orderBy: orderBy as Record<string, unknown>,
         skip,
         take: limit,
       }),
