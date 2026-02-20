@@ -196,9 +196,9 @@ export function TransactionList({
                     )}
                   </button>
                 </TableCell>
-                <TableCell className="font-medium">
-                  <span className={`flex items-center gap-1.5 ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
-                    {transaction.description}
+                <TableCell className="font-medium max-w-48 lg:max-w-72">
+                  <span className={`flex items-center gap-1.5 truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`} title={transaction.description}>
+                    <span className="truncate">{transaction.description}</span>
                     {transaction.isFixed && (
                       <Badge variant="outline" className="text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
                         <Pin className="h-3 w-3" />
