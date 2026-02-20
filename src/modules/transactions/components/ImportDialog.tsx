@@ -421,71 +421,73 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
                 return (
                   <div
                     key={i}
-                    className={`flex w-full items-center gap-2 rounded-lg p-2 transition-colors ${
+                    className={`rounded-lg p-2 transition-colors ${
                       isSelected ? "bg-primary/5 ring-1 ring-primary/20" : ""
                     }`}
                   >
-                    <button
-                      onClick={() => toggleSelection(i)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-muted/50"
-                    >
-                      {isSelected ? (
-                        <CheckCircle2 className="h-5 w-5 text-primary" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-muted-foreground" />
-                      )}
-                    </button>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{t.description}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(t.date), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
-                        {cat && (
-                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                            <Tag className="h-3 w-3" />
-                            {cat.icon} {cat.name}
-                          </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => toggleSelection(i)}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-muted/50"
+                      >
+                        {isSelected ? (
+                          <CheckCircle2 className="h-5 w-5 text-primary" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-muted-foreground" />
                         )}
-                        {!cat && isSelected && (
-                          <span className="text-xs text-amber-500">Sem categoria</span>
-                        )}
-                      </div>
-                    </div>
+                      </button>
 
-                    <Select
-                      value={catId || "__none__"}
-                      onValueChange={(v) => setTxCategory(i, v === "__none__" ? "" : v)}
-                    >
-                      <SelectTrigger className="w-35 h-8 text-xs shrink-0">
-                        <SelectValue placeholder="Categoria" />
-                      </SelectTrigger>
-                      <SelectContent portal={false} position="popper" className="max-h-52">
-                        <SelectItem value="__none__">
-                          <span className="text-muted-foreground">Nenhuma</span>
-                        </SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            <span className="flex items-center gap-1">
-                              {c.icon && <span>{c.icon}</span>}
-                              {c.name}
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <p className="text-sm font-medium truncate" title={t.description}>{t.description}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(t.date), "dd/MM/yyyy", { locale: ptBR })}
+                          </p>
+                          {cat && (
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                              <Tag className="h-3 w-3" />
+                              {cat.icon} {cat.name}
                             </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          )}
+                          {!cat && isSelected && (
+                            <span className="text-xs text-amber-500">Sem categoria</span>
+                          )}
+                        </div>
+                      </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge variant={t.type === "INCOME" ? "default" : "destructive"} className="text-xs">
-                        {t.type === "INCOME" ? "Receita" : "Despesa"}
-                      </Badge>
-                      <p className={`text-sm font-semibold whitespace-nowrap ${
+                      <p className={`text-sm font-semibold whitespace-nowrap shrink-0 ${
                         t.type === "INCOME" ? "text-emerald-500" : "text-red-500"
                       }`}>
                         {t.type === "INCOME" ? "+" : "-"}
                         {formatCurrency(t.amount)}
                       </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-1.5 ml-10">
+                      <Select
+                        value={catId || "__none__"}
+                        onValueChange={(v) => setTxCategory(i, v === "__none__" ? "" : v)}
+                      >
+                        <SelectTrigger className="h-7 text-xs flex-1">
+                          <SelectValue placeholder="Categoria" />
+                        </SelectTrigger>
+                        <SelectContent portal={false} position="popper" className="max-h-52">
+                          <SelectItem value="__none__">
+                            <span className="text-muted-foreground">Nenhuma</span>
+                          </SelectItem>
+                          {categories.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              <span className="flex items-center gap-1">
+                                {c.icon && <span>{c.icon}</span>}
+                                {c.name}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Badge variant={t.type === "INCOME" ? "default" : "destructive"} className="text-xs shrink-0">
+                        {t.type === "INCOME" ? "Receita" : "Despesa"}
+                      </Badge>
                     </div>
                   </div>
                 );
