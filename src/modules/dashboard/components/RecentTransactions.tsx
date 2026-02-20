@@ -102,9 +102,9 @@ export function RecentTransactions({
               )}
             </div>
 
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium leading-none">
-                {transaction.description}
+            <div className="flex-1 min-w-0 space-y-1">
+              <p className="text-sm font-medium leading-none truncate" title={transaction.description}>
+                {transaction.description.length > 40 ? transaction.description.slice(0, 40) + "…" : transaction.description}
               </p>
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="font-normal text-xs">

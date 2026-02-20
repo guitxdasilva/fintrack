@@ -396,15 +396,17 @@ export function MonthTransactions({
                 )}
 
                 <div className="flex-1 min-w-0 space-y-1">
-                  <p className={`text-sm font-medium leading-none truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
-                    {transaction.description}
+                  <div className="flex items-center gap-1.5">
+                    <p className={`text-sm font-medium leading-none truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`} title={transaction.description}>
+                      {transaction.description.length > 40 ? transaction.description.slice(0, 40) + "…" : transaction.description}
+                    </p>
                     {transaction.isFixed && (
-                      <Badge variant="outline" className="ml-1.5 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
+                      <Badge variant="outline" className="shrink-0 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
                         <Pin className="h-3 w-3" />
                         Fixa
                       </Badge>
                     )}
-                  </p>
+                  </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Badge variant="secondary" className="font-normal text-xs">
                       {transaction.category?.icon} {transaction.category?.name}
@@ -624,15 +626,17 @@ export function MonthTransactions({
                   )}
 
                   <div className="flex-1 min-w-0 space-y-0.5">
-                    <p className={`text-sm font-medium truncate ${t.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
-                      {t.description}
+                    <div className="flex items-center gap-1.5">
+                      <p className={`text-sm font-medium truncate ${t.paid ? "line-through decoration-muted-foreground/50" : ""}`} title={t.description}>
+                        {t.description.length > 40 ? t.description.slice(0, 40) + "…" : t.description}
+                      </p>
                       {t.isFixed && (
-                        <Badge variant="outline" className="ml-1.5 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
+                        <Badge variant="outline" className="shrink-0 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
                           <Pin className="h-3 w-3" />
                           Fixa
                         </Badge>
                       )}
-                    </p>
+                    </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="secondary" className="font-normal text-xs">
                         {t.category?.icon} {t.category?.name}

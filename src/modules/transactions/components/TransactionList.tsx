@@ -198,7 +198,7 @@ export function TransactionList({
                 </TableCell>
                 <TableCell className="font-medium max-w-48 lg:max-w-72">
                   <span className={`flex items-center gap-1.5 truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`} title={transaction.description}>
-                    <span className="truncate">{transaction.description}</span>
+                    <span className="truncate">{transaction.description.length > 40 ? transaction.description.slice(0, 40) + "…" : transaction.description}</span>
                     {transaction.isFixed && (
                       <Badge variant="outline" className="text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
                         <Pin className="h-3 w-3" />
@@ -366,8 +366,8 @@ export function TransactionList({
             </button>
 
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`}>
-                {transaction.description}
+              <p className={`text-sm font-medium truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`} title={transaction.description}>
+                {transaction.description.length > 40 ? transaction.description.slice(0, 40) + "…" : transaction.description}
                 {transaction.isFixed && (
                   <Badge variant="outline" className="ml-1.5 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
                     <Pin className="h-3 w-3" />
@@ -487,8 +487,8 @@ export function TransactionList({
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
             <DialogTitle>Excluir transação</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir a transação &quot;{deleteTarget?.description}&quot;?
+            <DialogDescription className="break-words">
+              Tem certeza que deseja excluir a transação &quot;<span className="font-medium" title={deleteTarget?.description}>{(deleteTarget?.description?.length ?? 0) > 40 ? deleteTarget?.description?.slice(0, 40) + "…" : deleteTarget?.description}</span>&quot;?
               Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>

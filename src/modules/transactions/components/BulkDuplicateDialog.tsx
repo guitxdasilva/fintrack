@@ -350,8 +350,8 @@ export function BulkDuplicateDialog({
                       {isSelected && <Check className="h-3 w-3" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {t.description}
+                      <p className="text-sm font-medium truncate" title={t.description}>
+                        {t.description.length > 40 ? t.description.slice(0, 40) + "…" : t.description}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">

@@ -258,7 +258,7 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
@@ -413,7 +413,7 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
             </div>
 
             {/* Transaction list */}
-            <div className="max-h-72 overflow-y-auto space-y-1 rounded-lg border p-2">
+            <div className="max-h-72 overflow-y-auto overflow-x-hidden space-y-1 rounded-lg border p-2">
               {transactions.map((t, i) => {
                 const isSelected = selectedIdxs.has(i);
                 const catId = txCategories.get(i) || "";
@@ -425,7 +425,7 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
                       isSelected ? "bg-primary/5 ring-1 ring-primary/20" : ""
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <button
                         onClick={() => toggleSelection(i)}
                         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-muted/50"
@@ -438,7 +438,9 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
                       </button>
 
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="text-sm font-medium truncate" title={t.description}>{t.description}</p>
+                        <p className="text-sm font-medium" title={t.description}>
+                          {t.description.length > 40 ? t.description.slice(0, 40) + "…" : t.description}
+                        </p>
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-xs text-muted-foreground">
                             {format(new Date(t.date), "dd/MM/yyyy", { locale: ptBR })}
