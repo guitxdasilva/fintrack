@@ -76,6 +76,8 @@ export function MonthTransactions({
   const [selectedCard, setSelectedCard] = useState<CardGroup | null>(null);
   const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [cardInvoices, setCardInvoices] = useState<Map<string, InvoiceData>>(new Map());
+  const [cardInvoicesLoading, setCardInvoicesLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [modalSelectedIds, setModalSelectedIds] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
@@ -135,7 +137,18 @@ export function MonthTransactions({
         toast.success(json.data?.message || "Fatura paga com sucesso");
         setModalSelectedIds(new Set());
         if (selectedCard.hasClosingDay) {
-          fetchInvoice(selectedCard.cardId);
+          const invoiceRes = await fetch(
+            `/api/cards/${selectedCard.cardId}/invoice?month=${month}&year=${year}`
+          );
+          const invoiceJson = await invoiceRes.json();
+          if (invoiceJson.data) {
+            setInvoiceData(invoiceJson.data);
+            setCardInvoices((prev) => {
+              const next = new Map(prev);
+              next.set(selectedCard.cardId, invoiceJson.data);
+              return next;
+            });
+          }
         }
         onDataChange?.();
       } else {
@@ -170,9 +183,14 @@ export function MonthTransactions({
 
   function handleCardClick(group: CardGroup) {
     setSelectedCard(group);
-    setInvoiceData(null);
-    if (group.hasClosingDay) {
-      fetchInvoice(group.cardId);
+    const preloaded = cardInvoices.get(group.cardId);
+    if (preloaded) {
+      setInvoiceData(preloaded);
+    } else {
+      setInvoiceData(null);
+      if (group.hasClosingDay) {
+        fetchInvoice(group.cardId);
+      }
     }
   }
 
@@ -256,6 +274,34 @@ export function MonthTransactions({
     };
   }, [transactions]);
 
+  useEffect(() => {
+    const cardsWithClosingDay = cardGroups.filter((g) => g.hasClosingDay);
+    if (cardsWithClosingDay.length === 0) return;
+
+    setCardInvoicesLoading(true);
+    Promise.all(
+      cardsWithClosingDay.map(async (g) => {
+        try {
+          const res = await fetch(
+            `/api/cards/${g.cardId}/invoice?month=${month}&year=${year}`
+          );
+          const json = await res.json();
+          if (json.data) {
+            return { cardId: g.cardId, data: json.data as InvoiceData };
+          }
+        } catch { /* ignore */ }
+        return null;
+      })
+    ).then((results) => {
+      const map = new Map<string, InvoiceData>();
+      for (const r of results) {
+        if (r) map.set(r.cardId, r.data);
+      }
+      setCardInvoices(map);
+      setCardInvoicesLoading(false);
+    });
+  }, [cardGroups, month, year]);
+
   if (isLoading) {
     return (
       <Card>
@@ -325,6 +371,12 @@ export function MonthTransactions({
           {listItems.map((item) => {
             if (item.kind === "card") {
               const group = item.data;
+              const invoiceInfo = cardInvoices.get(group.cardId);
+              const displayTotal = invoiceInfo ? invoiceInfo.total : group.total;
+              const displayTxCount = invoiceInfo ? invoiceInfo.transactions.length : group.transactions.length;
+              const displayPaidCount = invoiceInfo
+                ? invoiceInfo.transactions.filter((t) => t.type === "EXPENSE" && t.paid).length
+                : group.transactions.filter((t) => t.type === "EXPENSE" && t.paid).length;
               return (
                 <button
                   key={`card-${group.cardId}`}
@@ -341,20 +393,30 @@ export function MonthTransactions({
                       {group.cardName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {group.transactions.length} transação(ões)
-                      {group.transactions.some((t) => t.type === "EXPENSE") && (
+                      {cardInvoicesLoading && group.hasClosingDay ? (
+                        "Carregando fatura..."
+                      ) : (
                         <>
-                          {" · "}
-                          {group.transactions.filter((t) => t.type === "EXPENSE" && t.paid).length} paga(s)
+                          {displayTxCount} transação(ões)
+                          {displayPaidCount > 0 && (
+                            <>
+                              {" · "}
+                              {displayPaidCount} paga(s)
+                            </>
+                          )}
                         </>
                       )}
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-red-500">
-                      -{formatCurrency(group.total)}
-                    </p>
+                    {cardInvoicesLoading && group.hasClosingDay ? (
+                      <Spinner className="h-4 w-4" />
+                    ) : (
+                      <p className="text-sm font-semibold text-red-500">
+                        -{formatCurrency(displayTotal)}
+                      </p>
+                    )}
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </button>
