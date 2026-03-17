@@ -310,7 +310,16 @@ export function TransactionList({
                     <span className="text-muted-foreground text-sm">—</span>
                   )}
                 </TableCell>
-                <TableCell>{formatDate(transaction.date)}</TableCell>
+                <TableCell>
+                  <div>
+                    <span>{formatDate(transaction.date)}</span>
+                    {transaction.purchaseDate && (
+                      <p className="text-xs text-muted-foreground" title="Data da compra">
+                        Compra: {formatDate(transaction.purchaseDate)}
+                      </p>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell
                   className={`text-right font-semibold ${getTransactionColor(
                     transaction.type
@@ -460,7 +469,9 @@ export function TransactionList({
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">
-                  {formatDate(transaction.date)}
+                  {transaction.purchaseDate
+                    ? `Compra: ${formatDate(transaction.purchaseDate)}`
+                    : formatDate(transaction.date)}
                 </span>
               </div>
             </div>

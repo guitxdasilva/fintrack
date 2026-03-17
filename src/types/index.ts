@@ -48,6 +48,7 @@ export interface Transaction {
   paid?: boolean;
   paidAt?: string | null;
   isFixed?: boolean;
+  purchaseDate?: string | null;
 }
 
 export interface CreateTransactionDTO {

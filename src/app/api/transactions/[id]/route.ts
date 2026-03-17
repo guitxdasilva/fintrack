@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { getCreditCardMonthOffset } from "@/lib/invoice";
 
 const updateTransactionSchema = z.object({
   amount: z.number().positive("Valor deve ser positivo").optional(),
   type: z.enum(["INCOME", "EXPENSE"]).optional(),
   description: z.string().min(1, "Descrição é obrigatória").optional(),
   date: z.string().min(1, "Data é obrigatória").optional(),
+  purchaseDate: z.string().nullable().optional(),
   categoryId: z.string().min(1, "Categoria é obrigatória").optional(),
   paymentType: z.enum(["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"]).nullable().optional(),
   cardId: z.string().nullable().optional(),
@@ -53,7 +55,38 @@ export async function PUT(
     if (result.data.type !== undefined) data.type = result.data.type;
     if (result.data.description !== undefined)
       data.description = result.data.description;
-    if (result.data.date !== undefined) data.date = new Date(result.data.date);
+
+    if (result.data.purchaseDate !== undefined) {
+      data.purchaseDate = result.data.purchaseDate ? new Date(result.data.purchaseDate) : null;
+    }
+
+    const effectiveCardType = result.data.cardType !== undefined ? result.data.cardType : existing.cardType;
+    const effectiveCardId = result.data.cardId !== undefined ? result.data.cardId : existing.cardId;
+
+    if (result.data.date !== undefined) {
+      const newDate = new Date(result.data.date);
+
+      if (effectiveCardType === "CREDIT" && effectiveCardId) {
+        const card = await prisma.card.findFirst({
+          where: { id: effectiveCardId, userId: session.user.id },
+          select: { closingDayType: true, closingDayValue: true },
+        });
+        if (card?.closingDayType && card?.closingDayValue) {
+          data.purchaseDate = newDate;
+          const offset = getCreditCardMonthOffset(newDate, card.closingDayType, card.closingDayValue);
+          const billingDate = new Date(newDate);
+          billingDate.setMonth(billingDate.getMonth() + offset);
+          const maxDay = new Date(billingDate.getFullYear(), billingDate.getMonth() + 1, 0).getDate();
+          if (billingDate.getDate() > maxDay) billingDate.setDate(maxDay);
+          data.date = billingDate;
+        } else {
+          data.date = newDate;
+        }
+      } else {
+        data.date = newDate;
+        data.purchaseDate = null;
+      }
+    }
     if (result.data.categoryId !== undefined) {
       const category = await prisma.category.findFirst({
         where: { id: result.data.categoryId, userId: session.user.id },

@@ -71,6 +71,7 @@ model Transaction {
   paid               Boolean   @default(false)
   paidAt             DateTime?
   isFixed            Boolean   @default(false)
+  purchaseDate       DateTime?
 
   @@index([userId])
   @@index([date])

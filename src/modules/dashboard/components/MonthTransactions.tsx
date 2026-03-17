@@ -483,6 +483,11 @@ export function MonthTransactions({
                       {format(new Date(transaction.date), "dd MMM", {
                         locale: ptBR,
                       })}
+                      {transaction.purchaseDate && (
+                        <span className="ml-1 text-muted-foreground/70">
+                          (Compra: {format(new Date(transaction.purchaseDate), "dd MMM", { locale: ptBR })})
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -717,6 +722,11 @@ export function MonthTransactions({
                         {format(new Date(t.date), "dd MMM yyyy", {
                           locale: ptBR,
                         })}
+                        {t.purchaseDate && (
+                          <span className="ml-1 text-muted-foreground/70">
+                            (Compra: {format(new Date(t.purchaseDate), "dd MMM", { locale: ptBR })})
+                          </span>
+                        )}
                       </span>
                     </div>
                   </div>

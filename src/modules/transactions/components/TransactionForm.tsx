@@ -95,7 +95,7 @@ export function TransactionForm({
       setInstallments("2");
       setIsFixed(transaction.isFixed || false);
       setFixedMonths("");
-      setDate(new Date(transaction.date));
+      setDate(transaction.purchaseDate ? new Date(transaction.purchaseDate) : new Date(transaction.date));
     } else {
       setType(defaultType);
       setDescription("");
@@ -528,7 +528,13 @@ export function TransactionForm({
           )}
 
           <div className="space-y-2">
-            <Label>{type === "EXPENSE" && isFixed ? "Data de Vencimento" : "Data"}</Label>
+            <Label>
+              {type === "EXPENSE" && isFixed
+                ? "Data de Vencimento"
+                : type === "EXPENSE" && paymentType === "CARD" && cardType === "CREDIT"
+                  ? "Data da Compra"
+                  : "Data"}
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button

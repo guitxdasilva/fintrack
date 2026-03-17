@@ -55,6 +55,7 @@ function buildWhere(searchParams: URLSearchParams, userId: string) {
 
 interface TransactionRow {
   date: string;
+  purchaseDate: string;
   type: string;
   expenseType: string;
   category: string;
@@ -70,6 +71,7 @@ interface TransactionRow {
 function mapTransactions(
   transactions: {
     date: Date;
+    purchaseDate?: Date | null;
     type: string;
     isFixed: boolean;
     category?: { name: string } | null;
@@ -85,6 +87,7 @@ function mapTransactions(
 ): TransactionRow[] {
   return transactions.map((t) => ({
     date: new Date(t.date).toLocaleDateString("pt-BR"),
+    purchaseDate: t.purchaseDate ? new Date(t.purchaseDate).toLocaleDateString("pt-BR") : "",
     type: t.type === "INCOME" ? "Receita" : "Despesa",
     expenseType: t.type === "EXPENSE" ? (t.isFixed ? "Fixa" : "Variável") : "",
     category: t.category?.name || "",
@@ -99,11 +102,11 @@ function mapTransactions(
 }
 
 function buildCsv(rows: TransactionRow[]): string {
-  const header = "Data,Tipo,Tipo Despesa,Categoria,Pagamento,Cartão,Tipo Cartão,Parcela,Descrição,Valor,Pago";
+  const header = "Data,Data da Compra,Tipo,Tipo Despesa,Categoria,Pagamento,Cartão,Tipo Cartão,Parcela,Descrição,Valor,Pago";
   const csvRows = rows.map((r) => {
     const desc = `"${r.description.replace(/"/g, '""')}"`;
     const amount = r.amount.toFixed(2).replace(".", ",");
-    return `${r.date},${r.type},${r.expenseType},${r.category},${r.paymentType},${r.cardName},${r.cardType},${r.installment},${desc},${amount},${r.paid}`;
+    return `${r.date},${r.purchaseDate},${r.type},${r.expenseType},${r.category},${r.paymentType},${r.cardName},${r.cardType},${r.installment},${desc},${amount},${r.paid}`;
   });
   return "\uFEFF" + [header, ...csvRows].join("\n");
 }
@@ -132,15 +135,16 @@ function buildPdf(rows: TransactionRow[], monthLabel: string): Promise<Buffer> {
     doc.moveDown(0.5);
 
     const cols = [
-      { label: "Data", width: 60 },
-      { label: "Tipo", width: 50 },
-      { label: "Categoria", width: 80 },
-      { label: "Descrição", width: 200 },
-      { label: "Pagamento", width: 65 },
-      { label: "Cartão", width: 75 },
-      { label: "Parcela", width: 45 },
-      { label: "Valor", width: 70 },
-      { label: "Pago", width: 35 },
+      { label: "Data", width: 55 },
+      { label: "Compra", width: 55 },
+      { label: "Tipo", width: 45 },
+      { label: "Categoria", width: 75 },
+      { label: "Descrição", width: 180 },
+      { label: "Pagamento", width: 60 },
+      { label: "Cartão", width: 70 },
+      { label: "Parcela", width: 42 },
+      { label: "Valor", width: 65 },
+      { label: "Pago", width: 33 },
     ];
 
     const tableLeft = doc.page.margins.left;
@@ -174,12 +178,12 @@ function buildPdf(rows: TransactionRow[], monthLabel: string): Promise<Buffer> {
 
       const amountStr = `R$ ${r.amount.toFixed(2).replace(".", ",")}`;
       const textColor = r.type === "Receita" ? "#16a34a" : "#dc2626";
-      const values = [r.date, r.type, r.category, r.description, r.paymentType, r.cardName, r.installment, amountStr, r.paid];
+      const values = [r.date, r.purchaseDate, r.type, r.category, r.description, r.paymentType, r.cardName, r.installment, amountStr, r.paid];
 
       let x = tableLeft;
       doc.font("Helvetica").fontSize(7.5);
       for (let j = 0; j < cols.length; j++) {
-        doc.fillColor(j === 7 ? textColor : "#334155");
+        doc.fillColor(j === 8 ? textColor : "#334155");
         doc.text(values[j], x + 4, y + 5, { width: cols[j].width - 8, ellipsis: true });
         x += cols[j].width;
       }

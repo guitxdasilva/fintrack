@@ -277,7 +277,9 @@ function CategoryDetailModal({
                     </Badge>
                   )}
                   <span className="text-xs text-muted-foreground">
-                    {format(new Date(t.date), "dd MMM yyyy", { locale: ptBR })}
+                    {t.purchaseDate
+                      ? `Compra: ${format(new Date(t.purchaseDate), "dd MMM yyyy", { locale: ptBR })}` 
+                      : format(new Date(t.date), "dd MMM yyyy", { locale: ptBR })}
                   </span>
                 </div>
               </div>

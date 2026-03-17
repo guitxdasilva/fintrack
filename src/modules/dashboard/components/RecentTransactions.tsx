@@ -111,9 +111,9 @@ export function RecentTransactions({
                   {transaction.category.name}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
-                  {format(new Date(transaction.date), "dd MMM yyyy", {
-                    locale: ptBR,
-                  })}
+                  {transaction.purchaseDate
+                    ? `Compra: ${format(new Date(transaction.purchaseDate), "dd MMM yyyy", { locale: ptBR })}` 
+                    : format(new Date(transaction.date), "dd MMM yyyy", { locale: ptBR })}
                 </span>
               </div>
             </div>
