@@ -192,13 +192,17 @@ export async function POST(request: NextRequest) {
       const data = Array.from({ length: installments }, (_, i) => {
         const installmentDate = new Date(baseDate);
         installmentDate.setMonth(installmentDate.getMonth() + i + creditMonthOffset);
-        const maxDay = new Date(
-          installmentDate.getFullYear(),
-          installmentDate.getMonth() + 1,
-          0
-        ).getDate();
-        if (installmentDate.getDate() > maxDay) {
-          installmentDate.setDate(maxDay);
+        if (creditMonthOffset > 0) {
+          installmentDate.setDate(1);
+        } else {
+          const maxDay = new Date(
+            installmentDate.getFullYear(),
+            installmentDate.getMonth() + 1,
+            0
+          ).getDate();
+          if (installmentDate.getDate() > maxDay) {
+            installmentDate.setDate(maxDay);
+          }
         }
 
         return {
@@ -271,14 +275,7 @@ export async function POST(request: NextRequest) {
     const transactionDate = new Date(date);
     if (creditMonthOffset > 0) {
       transactionDate.setMonth(transactionDate.getMonth() + creditMonthOffset);
-      const maxDay = new Date(
-        transactionDate.getFullYear(),
-        transactionDate.getMonth() + 1,
-        0
-      ).getDate();
-      if (transactionDate.getDate() > maxDay) {
-        transactionDate.setDate(maxDay);
-      }
+      transactionDate.setDate(1);
     }
 
     const transaction = await prisma.transaction.create({

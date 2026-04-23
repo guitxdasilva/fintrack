@@ -223,14 +223,15 @@ export function TransactionForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-hidden p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>
             {isEditing ? "Editar Transação" : "Nova Transação"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="flex max-h-[calc(90vh-4.5rem)] flex-col">
+          <div className="space-y-4 overflow-y-auto px-6 pb-4">
           {/* Type toggle - only shown when editing (user already chose type via button) */}
           {isEditing && (
           <div className="grid grid-cols-2 gap-3">
@@ -561,8 +562,9 @@ export function TransactionForm({
               </PopoverContent>
             </Popover>
           </div>
+          </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 border-t bg-background px-6 py-4">
             <Button
               type="button"
               variant="outline"

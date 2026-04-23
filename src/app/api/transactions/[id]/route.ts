@@ -74,10 +74,12 @@ export async function PUT(
         if (card?.closingDayType && card?.closingDayValue) {
           data.purchaseDate = newDate;
           const offset = getCreditCardMonthOffset(newDate, card.closingDayType, card.closingDayValue);
+          const installmentShift = existing.currentInstallment && existing.currentInstallment > 1
+            ? existing.currentInstallment - 1
+            : 0;
           const billingDate = new Date(newDate);
-          billingDate.setMonth(billingDate.getMonth() + offset);
-          const maxDay = new Date(billingDate.getFullYear(), billingDate.getMonth() + 1, 0).getDate();
-          if (billingDate.getDate() > maxDay) billingDate.setDate(maxDay);
+          billingDate.setMonth(billingDate.getMonth() + offset + installmentShift);
+          billingDate.setDate(1);
           data.date = billingDate;
         } else {
           data.date = newDate;
