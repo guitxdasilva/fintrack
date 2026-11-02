@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Download, Copy, ArrowUpCircle, ArrowDownCircle, List, LayoutGrid, Upload, FileText, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { TransactionList } from "@/modules/transactions/components/TransactionList";
@@ -24,20 +24,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/common/components/ui/dropdown-menu";
+import { useTransactions } from "@/modules/transactions/hooks/useTransactions";
 import type { Transaction } from "@/types";
 
 type ViewMode = "table" | "cards";
 
-interface PaginationData {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
+/** API query params for the active filters (empty filters are omitted). */
+function filterParams(filters: FilterValues): Record<string, string> {
+  const params: Record<string, string> = {
+    month: String(filters.month),
+    year: String(filters.year),
+  };
+  if (filters.type !== "ALL") params.type = filters.type;
+  if (filters.categoryId) params.categoryId = filters.categoryId;
+  if (filters.search) params.search = filters.search;
+  if (filters.cardId) params.cardId = filters.cardId;
+  if (filters.paid) params.paid = filters.paid;
+  if (filters.isFixed) params.isFixed = filters.isFixed;
+  if (filters.paymentType) params.paymentType = filters.paymentType;
+  return params;
 }
 
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [defaultType, setDefaultType] = useState<"EXPENSE" | "INCOME">("EXPENSE");
   const [bulkDuplicateOpen, setBulkDuplicateOpen] = useState(false);
@@ -65,49 +73,15 @@ export default function TransactionsPage() {
   const [limit, setLimit] = useState(10);
   const [sortBy, setSortBy] = useState("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [pagination, setPagination] = useState<PaginationData>({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 1,
+  const { data, isLoading: loading } = useTransactions({
+    ...filterParams(filters),
+    page: String(page),
+    limit: String(limit),
+    sortBy,
+    sortOrder,
   });
-
-  const fetchTransactions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filters.type !== "ALL") params.set("type", filters.type);
-      if (filters.categoryId) params.set("categoryId", filters.categoryId);
-      if (filters.search) params.set("search", filters.search);
-      if (filters.cardId) params.set("cardId", filters.cardId);
-      if (filters.paid) params.set("paid", filters.paid);
-      if (filters.isFixed) params.set("isFixed", filters.isFixed);
-      if (filters.paymentType) params.set("paymentType", filters.paymentType);
-      params.set("month", String(filters.month));
-      params.set("year", String(filters.year));
-      params.set("page", String(page));
-      params.set("limit", String(limit));
-      params.set("sortBy", sortBy);
-      params.set("sortOrder", sortOrder);
-
-      const res = await fetch(`/api/transactions?${params.toString()}`);
-      const json = await res.json();
-      if (json.data) {
-        setTransactions(json.data);
-      }
-      if (json.pagination) {
-        setPagination(json.pagination);
-      }
-    } catch {
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [filters, page, limit, sortBy, sortOrder]);
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+  const transactions = data?.data ?? [];
+  const pagination = data?.pagination ?? { page: 1, limit, total: 0, totalPages: 1 };
 
   // Reset to page 1 when filters change
   const handleFilterChange = useCallback((newFilters: FilterValues) => {
@@ -132,17 +106,7 @@ export default function TransactionsPage() {
   }
 
   function handleExport(format: "csv" | "pdf") {
-    const params = new URLSearchParams();
-    if (filters.type !== "ALL") params.set("type", filters.type);
-    if (filters.categoryId) params.set("categoryId", filters.categoryId);
-    if (filters.search) params.set("search", filters.search);
-    if (filters.cardId) params.set("cardId", filters.cardId);
-    if (filters.paid) params.set("paid", filters.paid);
-    if (filters.isFixed) params.set("isFixed", filters.isFixed);
-    if (filters.paymentType) params.set("paymentType", filters.paymentType);
-    params.set("month", String(filters.month));
-    params.set("year", String(filters.year));
-    params.set("format", format);
+    const params = new URLSearchParams({ ...filterParams(filters), format });
 
     window.open(`/api/transactions/export?${params.toString()}`, "_blank");
   }
@@ -247,8 +211,6 @@ export default function TransactionsPage() {
           transactions={transactions}
           loading={loading}
           onEdit={handleEdit}
-          onDelete={fetchTransactions}
-          onTogglePaid={fetchTransactions}
           viewMode={viewMode}
           sortBy={sortBy}
           sortOrder={sortOrder}
@@ -277,19 +239,16 @@ export default function TransactionsPage() {
         onOpenChange={setFormOpen}
         transaction={editingTransaction}
         defaultType={defaultType}
-        onSuccess={fetchTransactions}
       />
 
       <BulkDuplicateDialog
         open={bulkDuplicateOpen}
         onOpenChange={setBulkDuplicateOpen}
-        onSuccess={fetchTransactions}
       />
 
       <ImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}
-        onSuccess={fetchTransactions}
       />
     </div>
   );

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useOpenSession } from "@/common/hooks/useOpenSession";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/api-client";
+import { useSaveCard } from "@/modules/cards/hooks/useCards";
 import { z } from "zod";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
@@ -39,38 +42,28 @@ interface CardFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   card?: Card | null;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
-export function CardForm({
+function CardFormContent({
   open,
   onOpenChange,
   card,
   onSuccess,
 }: CardFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [icon, setIcon] = useState("💳");
-  const [closingDayType, setClosingDayType] = useState<ClosingDayType | "">("");
-  const [closingDayValue, setClosingDayValue] = useState<string>("");
+  const saveCard = useSaveCard();
+  const loading = saveCard.isPending;
+  const [name, setName] = useState(card?.name ?? "");
+  const [icon, setIcon] = useState(card?.icon || "💳");
+  const [closingDayType, setClosingDayType] = useState<ClosingDayType | "">(
+    (card?.closingDayType as ClosingDayType) || ""
+  );
+  const [closingDayValue, setClosingDayValue] = useState<string>(
+    card?.closingDayValue?.toString() || ""
+  );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!card;
-
-  useEffect(() => {
-    if (card) {
-      setName(card.name);
-      setIcon(card.icon || "💳");
-      setClosingDayType((card.closingDayType as ClosingDayType) || "");
-      setClosingDayValue(card.closingDayValue?.toString() || "");
-    } else {
-      setName("");
-      setIcon("💳");
-      setClosingDayType("");
-      setClosingDayValue("");
-    }
-    setFieldErrors({});
-  }, [card, open]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,11 +81,7 @@ export function CardForm({
       return;
     }
 
-    setLoading(true);
-
     try {
-      const url = isEditing ? `/api/cards/${card.id}` : "/api/cards";
-
       const payload: Record<string, unknown> = { name: name.trim(), icon };
 
       if (closingDayType && closingDayValue) {
@@ -103,28 +92,15 @@ export function CardForm({
         payload.closingDayValue = null;
       }
 
-      const res = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Erro ao salvar cartão");
-        return;
-      }
+      await saveCard.mutateAsync({ id: isEditing ? card.id : undefined, payload });
 
       toast.success(
         isEditing ? "Cartão atualizado" : "Cartão criado"
       );
       onOpenChange(false);
-      onSuccess();
-    } catch {
-      toast.error("Erro ao salvar cartão");
-    } finally {
-      setLoading(false);
+      onSuccess?.();
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao salvar cartão"));
     }
   }
 
@@ -265,4 +241,10 @@ function ClosingDayHint({ type, value }: { type: ClosingDayType; value: number }
       Ex: Jan→dia {jan}, Fev→dia {feb}, Abr→dia {apr}
     </p>
   );
+}
+
+
+export function CardForm(props: CardFormProps) {
+  const session = useOpenSession(props.open);
+  return <CardFormContent key={`${session}-${props.card?.id ?? "new"}`} {...props} />;
 }

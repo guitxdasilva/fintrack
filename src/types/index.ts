@@ -141,6 +141,26 @@ export interface DashboardData {
   monthlyData: MonthlyData[];
 }
 
+export interface InvoiceData {
+  transactions: Transaction[];
+  total: number;
+  period: { start: string; end: string; label: string };
+  effectiveClosing: number | null;
+}
+
+export interface BudgetData {
+  budgets: BudgetSummary[];
+  totalBudget: number;
+  totalSpent: number;
+}
+
+export interface PaginationData {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface CategorySummary {
   category: string;
   color: string;

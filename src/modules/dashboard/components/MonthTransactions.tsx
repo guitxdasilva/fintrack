@@ -1,21 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Pie, PieChart, Cell, ResponsiveContainer, Tooltip } from "recharts";
-import {
-  ArrowDownCircle,
-  ArrowUpCircle,
-  CreditCard,
-  ChevronRight,
-  CalendarRange,
-  Check,
-  Circle,
-  CheckCircle2,
-  Loader2,
-  Pin,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowDownCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   Card,
@@ -24,283 +10,52 @@ import {
   CardHeader,
   CardTitle,
 } from "@/common/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/common/components/ui/dialog";
-import { Skeleton } from "@/common/components/ui/skeleton";
-import { Badge } from "@/common/components/ui/badge";
 import { Button } from "@/common/components/ui/button";
-import { Separator } from "@/common/components/ui/separator";
-import { Spinner } from "@/common/components/ui/spinner";
+import { Skeleton } from "@/common/components/ui/skeleton";
 import { EmptyState } from "@/common/components/ui/empty-state";
-import { formatCurrency } from "@/lib/utils";
+import { SelectionBar } from "@/common/components/SelectionBar";
+import { useSelection } from "@/common/hooks/useSelection";
+import { errorMessage } from "@/lib/api-client";
+import { useCardInvoices } from "@/modules/cards/hooks/useCards";
+import { useSetTransactionsPaid } from "@/modules/transactions/hooks/useTransactions";
 import type { Transaction } from "@/types";
-import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
-import type { PaymentType } from "@/types";
-
-interface CardGroup {
-  cardId: string;
-  cardName: string;
-  cardIcon: string;
-  cardType: string | null | undefined;
-  hasClosingDay: boolean;
-  total: number;
-  transactions: Transaction[];
-}
-
-interface InvoiceData {
-  transactions: Transaction[];
-  total: number;
-  period: { start: string; end: string; label: string };
-  effectiveClosing: number | null;
-}
+import { groupByCard, togglePaidUpdates } from "../lib/month-transactions";
+import { CardGroupRow } from "./month-transactions/CardGroupRow";
+import { CardInvoiceDialog } from "./month-transactions/CardInvoiceDialog";
+import { MonthTransactionRow } from "./month-transactions/MonthTransactionRow";
 
 interface MonthTransactionsProps {
   transactions: Transaction[];
   month: number;
   year: number;
   isLoading?: boolean;
-  onDataChange?: () => void;
 }
 
-export function MonthTransactions({
-  transactions,
-  month,
-  year,
-  isLoading,
-  onDataChange,
-}: MonthTransactionsProps) {
-  const [selectedCard, setSelectedCard] = useState<CardGroup | null>(null);
-  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
-  const [invoiceLoading, setInvoiceLoading] = useState(false);
-  const [cardInvoices, setCardInvoices] = useState<Map<string, InvoiceData>>(new Map());
-  const [cardInvoicesLoading, setCardInvoicesLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [modalSelectedIds, setModalSelectedIds] = useState<Set<string>>(new Set());
-  const [confirming, setConfirming] = useState(false);
-  const [payingInvoice, setPayingInvoice] = useState(false);
+export function MonthTransactions({ transactions, month, year, isLoading }: MonthTransactionsProps) {
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const selection = useSelection();
+  const setPaid = useSetTransactionsPaid();
 
-  function toggleSelection(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
+  const { individualItems, cardGroups } = useMemo(() => groupByCard(transactions), [transactions]);
 
-  function toggleModalSelection(id: string) {
-    setModalSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  async function handleConfirmPaid(ids: Set<string>, clearFn: () => void) {
-    setConfirming(true);
-    try {
-      const results = await Promise.all(
-        Array.from(ids).map((id) =>
-          fetch(`/api/transactions/${id}/toggle-paid`, { method: "PATCH" })
-        )
-      );
-      const allOk = results.every((r) => r.ok);
-      if (allOk) {
-        toast.success(`${ids.size} transação(ões) atualizada(s)`);
-      } else {
-        toast.error("Erro ao atualizar algumas transações");
-      }
-      clearFn();
-      onDataChange?.();
-    } catch {
-      toast.error("Erro ao atualizar transações");
-    } finally {
-      setConfirming(false);
-    }
-  }
-
-  async function handlePayInvoice() {
-    if (!selectedCard) return;
-    setPayingInvoice(true);
-    try {
-      const res = await fetch(
-        `/api/cards/${selectedCard.cardId}/invoice/pay?month=${month}&year=${year}`,
-        { method: "POST" }
-      );
-      const json = await res.json();
-      if (res.ok) {
-        toast.success(json.data?.message || "Fatura paga com sucesso");
-        setModalSelectedIds(new Set());
-        if (selectedCard.hasClosingDay) {
-          const invoiceRes = await fetch(
-            `/api/cards/${selectedCard.cardId}/invoice?month=${month}&year=${year}`
-          );
-          const invoiceJson = await invoiceRes.json();
-          if (invoiceJson.data) {
-            setInvoiceData(invoiceJson.data);
-            setCardInvoices((prev) => {
-              const next = new Map(prev);
-              next.set(selectedCard.cardId, invoiceJson.data);
-              return next;
-            });
-          }
-        }
-        onDataChange?.();
-      } else {
-        toast.error(json.error || "Erro ao pagar fatura");
-      }
-    } catch {
-      toast.error("Erro ao pagar fatura");
-    } finally {
-      setPayingInvoice(false);
-    }
-  }
-
-  const fetchInvoice = useCallback(
-    async (cardId: string) => {
-      setInvoiceLoading(true);
-      try {
-        const res = await fetch(
-          `/api/cards/${cardId}/invoice?month=${month}&year=${year}`
-        );
-        const json = await res.json();
-        if (json.data) {
-          setInvoiceData(json.data);
-        }
-      } catch {
-        setInvoiceData(null);
-      } finally {
-        setInvoiceLoading(false);
-      }
-    },
-    [month, year]
+  const closingDayCardIds = useMemo(
+    () => cardGroups.filter((g) => g.hasClosingDay).map((g) => g.cardId),
+    [cardGroups]
   );
+  const { invoices, isLoading: invoicesLoading } = useCardInvoices(closingDayCardIds, month, year);
 
-  function handleCardClick(group: CardGroup) {
-    setSelectedCard(group);
-    const preloaded = cardInvoices.get(group.cardId);
-    if (preloaded) {
-      setInvoiceData(preloaded);
-    } else {
-      setInvoiceData(null);
-      if (group.hasClosingDay) {
-        fetchInvoice(group.cardId);
-      }
+  const selectedCard = cardGroups.find((g) => g.cardId === selectedCardId) ?? null;
+
+  async function handleConfirmPaid() {
+    const updates = togglePaidUpdates(selection.selected, transactions);
+    selection.clear();
+    try {
+      await setPaid.mutateAsync(updates);
+      toast.success(`${updates.size} transação(ões) atualizada(s)`);
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao atualizar transações"));
     }
   }
-
-  function handleCloseModal() {
-    setSelectedCard(null);
-    setInvoiceData(null);
-    setModalSelectedIds(new Set());
-  }
-
-  const activeTransactions = useMemo(() => {
-    if (invoiceData) return invoiceData.transactions;
-    return selectedCard?.transactions ?? [];
-  }, [invoiceData, selectedCard]);
-
-  const activeTotal = invoiceData ? invoiceData.total : (selectedCard?.total ?? 0);
-
-  const hasUnpaidExpenses = useMemo(() => {
-    return activeTransactions.some((t) => t.type === "EXPENSE" && !t.paid);
-  }, [activeTransactions]);
-
-  const unpaidCount = useMemo(() => {
-    return activeTransactions.filter((t) => t.type === "EXPENSE" && !t.paid).length;
-  }, [activeTransactions]);
-
-  const cardCategoryData = useMemo(() => {
-    if (!selectedCard) return [];
-
-    const catMap = new Map<string, { name: string; color: string; total: number }>();
-    for (const t of activeTransactions) {
-      if (t.type !== "EXPENSE") continue;
-      const key = t.category?.name || "Outros";
-      const existing = catMap.get(key);
-      if (existing) {
-        existing.total += t.amount;
-      } else {
-        catMap.set(key, {
-          name: `${t.category?.icon || ""} ${key}`.trim(),
-          color: t.category?.color || "#6366f1",
-          total: t.amount,
-        });
-      }
-    }
-
-    const items = Array.from(catMap.values()).sort((a, b) => b.total - a.total);
-    const totalExpense = items.reduce((sum, i) => sum + i.total, 0);
-    return items.map((item) => ({
-      ...item,
-      value: item.total,
-      percentage: totalExpense > 0 ? Math.round((item.total / totalExpense) * 100) : 0,
-    }));
-  }, [selectedCard, activeTransactions]);
-
-  const { individualItems, cardGroups } = useMemo(() => {
-    const individual: Transaction[] = [];
-    const groupMap = new Map<string, CardGroup>();
-
-    for (const t of transactions) {
-      if (t.paymentType === "CARD" && t.card) {
-        const key = t.card.id;
-        const existing = groupMap.get(key);
-        if (existing) {
-          existing.total += t.type === "EXPENSE" ? t.amount : -t.amount;
-          existing.transactions.push(t);
-        } else {
-          groupMap.set(key, {
-            cardId: t.card.id,
-            cardName: t.card.name,
-            cardIcon: t.card.icon || "💳",
-            cardType: t.cardType,            hasClosingDay: !!((t.card as unknown as Record<string, unknown>).closingDayType),            total: t.type === "EXPENSE" ? t.amount : -t.amount,
-            transactions: [t],
-          });
-        }
-      } else {
-        individual.push(t);
-      }
-    }
-
-    return {
-      individualItems: individual,
-      cardGroups: Array.from(groupMap.values()).sort((a, b) => b.total - a.total),
-    };
-  }, [transactions]);
-
-  useEffect(() => {
-    const cardsWithClosingDay = cardGroups.filter((g) => g.hasClosingDay);
-    if (cardsWithClosingDay.length === 0) return;
-
-    setCardInvoicesLoading(true);
-    Promise.all(
-      cardsWithClosingDay.map(async (g) => {
-        try {
-          const res = await fetch(
-            `/api/cards/${g.cardId}/invoice?month=${month}&year=${year}`
-          );
-          const json = await res.json();
-          if (json.data) {
-            return { cardId: g.cardId, data: json.data as InvoiceData };
-          }
-        } catch { /* ignore */ }
-        return null;
-      })
-    ).then((results) => {
-      const map = new Map<string, InvoiceData>();
-      for (const r of results) {
-        if (r) map.set(r.cardId, r.data);
-      }
-      setCardInvoices(map);
-      setCardInvoicesLoading(false);
-    });
-  }, [cardGroups, month, year]);
 
   if (isLoading) {
     return (
@@ -325,9 +80,7 @@ export function MonthTransactions({
     );
   }
 
-  const hasItems = individualItems.length > 0 || cardGroups.length > 0;
-
-  if (!hasItems) {
+  if (individualItems.length === 0 && cardGroups.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -346,16 +99,6 @@ export function MonthTransactions({
     );
   }
 
-  type ListItem =
-    | { kind: "card"; data: CardGroup }
-    | { kind: "transaction"; data: Transaction };
-
-  const listItems: ListItem[] = [
-    ...cardGroups.map((g) => ({ kind: "card" as const, data: g })),
-    ...individualItems
-      .map((t) => ({ kind: "transaction" as const, data: t })),
-  ];
-
   return (
     <>
       <Card>
@@ -368,418 +111,46 @@ export function MonthTransactions({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 max-h-105 overflow-y-auto">
-          {listItems.map((item) => {
-            if (item.kind === "card") {
-              const group = item.data;
-              const invoiceInfo = cardInvoices.get(group.cardId);
-              const displayTotal = invoiceInfo ? invoiceInfo.total : group.total;
-              const displayTxCount = invoiceInfo ? invoiceInfo.transactions.length : group.transactions.length;
-              const displayPaidCount = invoiceInfo
-                ? invoiceInfo.transactions.filter((t) => t.type === "EXPENSE" && t.paid).length
-                : group.transactions.filter((t) => t.type === "EXPENSE" && t.paid).length;
-              return (
-                <button
-                  key={`card-${group.cardId}`}
-                  onClick={() => handleCardClick(group)}
-                  className="flex w-full items-center gap-4 rounded-lg border p-3 transition-colors hover:bg-muted/50 text-left"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                    <CreditCard className="h-5 w-5 text-primary" />
-                  </div>
+          {cardGroups.map((group) => (
+            <CardGroupRow
+              key={`card-${group.cardId}`}
+              group={group}
+              invoice={invoices.get(group.cardId)}
+              invoiceLoading={invoicesLoading}
+              onClick={() => setSelectedCardId(group.cardId)}
+            />
+          ))}
 
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <p className="text-sm font-medium leading-none flex items-center gap-2">
-                      <span>{group.cardIcon}</span>
-                      {group.cardName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {cardInvoicesLoading && group.hasClosingDay ? (
-                        "Carregando fatura..."
-                      ) : (
-                        <>
-                          {displayTxCount} transação(ões)
-                          {displayPaidCount > 0 && (
-                            <>
-                              {" · "}
-                              {displayPaidCount} paga(s)
-                            </>
-                          )}
-                        </>
-                      )}
-                    </p>
-                  </div>
+          {individualItems.map((t) => (
+            <MonthTransactionRow
+              key={t.id}
+              transaction={t}
+              selected={selection.selected.has(t.id)}
+              onToggle={selection.toggle}
+              variant="list"
+            />
+          ))}
 
-                  <div className="flex items-center gap-2">
-                    {cardInvoicesLoading && group.hasClosingDay ? (
-                      <Spinner className="h-4 w-4" />
-                    ) : (
-                      <p className="text-sm font-semibold text-red-500">
-                        -{formatCurrency(displayTotal)}
-                      </p>
-                    )}
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </button>
-              );
-            }
-
-            const transaction = item.data;
-            const isExpense = transaction.type === "EXPENSE";
-            const isSelected = selectedIds.has(transaction.id);
-            return (
-              <div
-                key={transaction.id}
-                className={`flex items-center gap-4 rounded-lg p-3 ${transaction.paid ? "opacity-60" : ""} ${isSelected ? "bg-primary/5 ring-1 ring-primary/20 rounded-lg" : ""}`}
-              >
-                {isExpense ? (
-                  <button
-                    onClick={() => toggleSelection(transaction.id)}
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
-                      transaction.paid
-                        ? "bg-emerald-500/10"
-                        : isSelected
-                          ? "bg-primary/10"
-                          : "bg-red-500/10"
-                    }`}
-                    title={transaction.paid ? "Desmarcar como pago" : "Selecionar para marcar como pago"}
-                  >
-                    {transaction.paid ? (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                    ) : isSelected ? (
-                      <CheckCircle2 className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-red-400" />
-                    )}
-                  </button>
-                ) : (
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                    <ArrowUpCircle className="h-5 w-5 text-emerald-500" />
-                  </div>
-                )}
-
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className={`text-sm font-medium leading-none truncate ${transaction.paid ? "line-through decoration-muted-foreground/50" : ""}`} title={transaction.description}>
-                      {transaction.description.length > 40 ? transaction.description.slice(0, 40) + "…" : transaction.description}
-                    </p>
-                    {transaction.isFixed && (
-                      <Badge variant="outline" className="shrink-0 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
-                        <Pin className="h-3 w-3" />
-                        Fixa
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary" className="font-normal text-xs">
-                      {transaction.category?.icon} {transaction.category?.name}
-                    </Badge>
-                    {transaction.paymentType && transaction.paymentType !== "CARD" && (
-                      <span className="text-xs text-muted-foreground">
-                        {PAYMENT_TYPE_ICONS[transaction.paymentType as PaymentType]}{" "}
-                        {PAYMENT_TYPE_LABELS[transaction.paymentType as PaymentType]}
-                      </span>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(transaction.date), "dd MMM", {
-                        locale: ptBR,
-                      })}
-                      {transaction.purchaseDate && (
-                        <span className="ml-1 text-muted-foreground/70">
-                          (Compra: {format(new Date(transaction.purchaseDate), "dd MMM", { locale: ptBR })})
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <p
-                  className={`text-sm font-semibold whitespace-nowrap ${
-                    transaction.type === "INCOME"
-                      ? "text-emerald-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {transaction.type === "INCOME" ? "+" : "-"}
-                  {formatCurrency(transaction.amount)}
-                </p>
-              </div>
-            );
-          })}
-          {/* Floating confirm bar */}
-          {selectedIds.size > 0 && (
-            <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t pt-3 pb-1 flex items-center justify-between gap-3">
-              <span className="text-sm text-muted-foreground">
-                {selectedIds.size} selecionada(s)
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedIds(new Set())}
-                  disabled={confirming}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleConfirmPaid(selectedIds, () => setSelectedIds(new Set()))}
-                  disabled={confirming}
-                  className="gap-1.5"
-                >
-                  {confirming ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Check className="h-3.5 w-3.5" />
-                  )}
-                  Confirmar
-                </Button>
-              </div>
-            </div>
-          )}
+          <SelectionBar
+            count={selection.selected.size}
+            onCancel={selection.clear}
+            disabled={setPaid.isPending}
+            className="pt-3 pb-1"
+          >
+            <Button size="sm" onClick={handleConfirmPaid} disabled={setPaid.isPending} className="gap-1.5">
+              <Check className="h-3.5 w-3.5" />
+              Confirmar
+            </Button>
+          </SelectionBar>
         </CardContent>
       </Card>
 
-      {/* Card detail modal */}
-      <Dialog open={!!selectedCard} onOpenChange={handleCloseModal}>
-        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span className="text-lg">{selectedCard?.cardIcon}</span>
-              {selectedCard?.cardName}
-              <Badge variant="outline" className="ml-auto font-semibold text-red-500">
-                -{formatCurrency(activeTotal)}
-              </Badge>
-            </DialogTitle>
-          </DialogHeader>
-
-          {/* Invoice period info */}
-          {selectedCard?.hasClosingDay && (
-            <div className="flex items-center gap-2">
-              {invoiceLoading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Spinner className="h-4 w-4" />
-                  Carregando fatura...
-                </div>
-              ) : invoiceData ? (
-                <Badge variant="secondary" className="flex items-center gap-1.5 font-normal">
-                  <CalendarRange className="h-3.5 w-3.5" />
-                  Fatura: {invoiceData.period.label}
-                </Badge>
-              ) : null}
-            </div>
-          )}
-
-          {/* Pay invoice button */}
-          {!invoiceLoading && hasUnpaidExpenses && (
-            <Button
-              onClick={handlePayInvoice}
-              disabled={payingInvoice}
-              className="w-full gap-2 bg-emerald-600 hover:bg-emerald-500 text-white"
-            >
-              {payingInvoice ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle2 className="h-4 w-4" />
-              )}
-              Pagar fatura ({unpaidCount} pendente{unpaidCount !== 1 ? "s" : ""})
-            </Button>
-          )}
-
-          {/* Category pie chart */}
-          {!invoiceLoading && cardCategoryData.length > 0 && (
-            <>
-              <div className="flex flex-col items-center gap-4 sm:flex-row">
-                <div className="h-40 w-40 shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={cardCategoryData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={70}
-                        paddingAngle={3}
-                        dataKey="value"
-                        strokeWidth={0}
-                      >
-                        {cardCategoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        content={({ active, payload }) => {
-                          if (!active || !payload?.length) return null;
-                          const item = payload[0];
-                          return (
-                            <div className="rounded-lg border bg-background p-2 shadow-md">
-                              <p className="text-xs font-medium">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatCurrency(item.value as number)}
-                              </p>
-                            </div>
-                          );
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="flex flex-1 flex-col gap-1.5">
-                  {cardCategoryData.map((item) => (
-                    <div key={item.name} className="flex items-center gap-2">
-                      <div
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-xs flex-1 truncate">{item.name}</span>
-                      <span className="text-xs font-medium">
-                        {formatCurrency(item.value)}
-                      </span>
-                      <span className="text-xs text-muted-foreground w-8 text-right">
-                        {item.percentage}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-            </>
-          )}
-
-          <div className="space-y-3">
-            {invoiceLoading ? (
-              <div className="flex justify-center py-8">
-                <Spinner className="h-6 w-6" />
-              </div>
-            ) : (
-              activeTransactions
-                .sort(
-                  (a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
-                )
-                .map((t) => {
-                const isExp = t.type === "EXPENSE";
-                const isSel = modalSelectedIds.has(t.id);
-                return (
-                <div
-                  key={t.id}
-                  className={`flex items-center gap-3 rounded-lg border p-3 ${t.paid ? "opacity-60" : ""} ${isSel ? "ring-1 ring-primary/20 bg-primary/5" : ""}`}
-                >
-                  {isExp ? (
-                    <button
-                      onClick={() => toggleModalSelection(t.id)}
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors ${
-                        t.paid
-                          ? "bg-emerald-500/10"
-                          : isSel
-                            ? "bg-primary/10"
-                            : "bg-red-500/10"
-                      }`}
-                      title={t.paid ? "Desmarcar como pago" : "Selecionar"}
-                    >
-                      {t.paid ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                      ) : isSel ? (
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                      ) : (
-                        <Circle className="h-4 w-4 text-red-400" />
-                      )}
-                    </button>
-                  ) : (
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
-                      <ArrowUpCircle className="h-4 w-4 text-emerald-500" />
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <p className={`text-sm font-medium truncate ${t.paid ? "line-through decoration-muted-foreground/50" : ""}`} title={t.description}>
-                        {t.description.length > 40 ? t.description.slice(0, 40) + "…" : t.description}
-                      </p>
-                      {t.isFixed && (
-                        <Badge variant="outline" className="shrink-0 text-xs font-normal gap-1 text-blue-600 border-blue-200 dark:text-blue-400 dark:border-blue-800">
-                          <Pin className="h-3 w-3" />
-                          Fixa
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="font-normal text-xs">
-                        {t.category?.icon} {t.category?.name}
-                      </Badge>
-                      {t.cardType && (
-                        <Badge variant="outline" className="text-xs font-normal">
-                          {t.cardType === "CREDIT" ? "Crédito" : "Débito"}
-                        </Badge>
-                      )}
-                      {t.installments && (
-                        <Badge variant="outline" className="text-xs font-normal">
-                          {t.currentInstallment}/{t.installments}
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(t.date), "dd MMM yyyy", {
-                          locale: ptBR,
-                        })}
-                        {t.purchaseDate && (
-                          <span className="ml-1 text-muted-foreground/70">
-                            (Compra: {format(new Date(t.purchaseDate), "dd MMM", { locale: ptBR })})
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p
-                    className={`text-sm font-semibold whitespace-nowrap ${
-                      t.type === "INCOME"
-                        ? "text-emerald-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {t.type === "INCOME" ? "+" : "-"}
-                    {formatCurrency(t.amount)}
-                  </p>
-                </div>
-              );
-              })
-            )}
-          </div>
-
-          {/* Modal confirm bar */}
-          {modalSelectedIds.size > 0 && (
-            <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t pt-3 pb-1 flex items-center justify-between gap-3">
-              <span className="text-sm text-muted-foreground">
-                {modalSelectedIds.size} selecionada(s)
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setModalSelectedIds(new Set())}
-                  disabled={confirming}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleConfirmPaid(modalSelectedIds, () => setModalSelectedIds(new Set()))}
-                  disabled={confirming}
-                  className="gap-1.5"
-                >
-                  {confirming ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Check className="h-3.5 w-3.5" />
-                  )}
-                  Confirmar
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <CardInvoiceDialog
+        group={selectedCard}
+        month={month}
+        year={year}
+        onClose={() => setSelectedCardId(null)}
+      />
     </>
   );
 }

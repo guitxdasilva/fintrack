@@ -1,7 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useOpenSession } from "@/common/hooks/useOpenSession";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/api-client";
+import { useSaveCategory } from "@/modules/categories/hooks/useCategories";
 import { z } from "zod";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
@@ -34,7 +37,7 @@ interface CategoryFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   category?: Category | null;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 const PRESET_COLORS = [
@@ -49,37 +52,22 @@ const PRESET_ICONS = [
   "🎯", "🏋️", "🐾", "🎵",
 ];
 
-export function CategoryForm({
+function CategoryFormContent({
   open,
   onOpenChange,
   category,
   onSuccess,
 }: CategoryFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [type, setType] = useState<TransactionType>("EXPENSE");
-  const [color, setColor] = useState("#6366f1");
-  const [icon, setIcon] = useState("📦");
-  const [budget, setBudget] = useState("");
+  const saveCategory = useSaveCategory();
+  const loading = saveCategory.isPending;
+  const [name, setName] = useState(category?.name ?? "");
+  const [type, setType] = useState<TransactionType>(category?.type ?? "EXPENSE");
+  const [color, setColor] = useState(category?.color ?? "#6366f1");
+  const [icon, setIcon] = useState(category?.icon || "📦");
+  const [budget, setBudget] = useState(category?.budget ? String(category.budget) : "");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!category;
-
-  useEffect(() => {
-    if (category) {
-      setName(category.name);
-      setType(category.type);
-      setColor(category.color);
-      setIcon(category.icon || "📦");
-      setBudget(category.budget ? String(category.budget) : "");
-    } else {
-      setName("");
-      setType("EXPENSE");
-      setColor("#6366f1");
-      setIcon("📦");
-      setBudget("");
-    }
-  }, [category, open]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -97,8 +85,6 @@ export function CategoryForm({
       return;
     }
 
-    setLoading(true);
-
     try {
       const payload = {
         name: name.trim(),
@@ -108,22 +94,10 @@ export function CategoryForm({
         budget: budget ? parseFloat(budget) : null,
       };
 
-      const url = isEditing
-        ? `/api/categories/${category.id}`
-        : "/api/categories";
-
-      const res = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await saveCategory.mutateAsync({
+        id: isEditing ? category.id : undefined,
+        payload,
       });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Erro ao salvar categoria");
-        return;
-      }
 
       toast.success(
         isEditing
@@ -131,11 +105,9 @@ export function CategoryForm({
           : "Categoria criada com sucesso"
       );
       onOpenChange(false);
-      onSuccess();
-    } catch {
-      toast.error("Erro ao salvar categoria");
-    } finally {
-      setLoading(false);
+      onSuccess?.();
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao salvar categoria"));
     }
   }
 
@@ -268,4 +240,10 @@ export function CategoryForm({
       </DialogContent>
     </Dialog>
   );
+}
+
+
+export function CategoryForm(props: CategoryFormProps) {
+  const session = useOpenSession(props.open);
+  return <CategoryFormContent key={`${session}-${props.category?.id ?? "new"}`} {...props} />;
 }

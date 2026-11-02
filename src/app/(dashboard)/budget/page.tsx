@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Wallet, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/common/components/ui
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { EmptyState } from "@/common/components/ui/empty-state";
 import { formatCurrency } from "@/lib/utils";
+import { useBudget } from "@/modules/dashboard/hooks/useDashboard";
 import type { BudgetSummary } from "@/types";
 
 const MONTH_NAMES = [
@@ -15,34 +16,14 @@ const MONTH_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-interface BudgetData {
-  budgets: BudgetSummary[];
-  totalBudget: number;
-  totalSpent: number;
-}
-
 export default function BudgetPage() {
-  const [data, setData] = useState<BudgetData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [month, setMonth] = useState(() => new Date().getMonth());
   const [year, setYear] = useState(() => new Date().getFullYear());
-
-  const fetchBudgets = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch(`/api/budget?month=${month}&year=${year}`);
-      const json = await res.json();
-      if (json.data) setData(json.data);
-    } catch {
-      toast.error("Erro ao carregar orçamentos");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [month, year]);
+  const { data, isLoading, isError } = useBudget(month, year);
 
   useEffect(() => {
-    fetchBudgets();
-  }, [fetchBudgets]);
+    if (isError) toast.error("Erro ao carregar orçamentos");
+  }, [isError]);
 
   function handlePrevMonth() {
     if (month === 0) {

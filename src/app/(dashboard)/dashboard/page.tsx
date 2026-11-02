@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { BalanceCard } from "@/modules/dashboard/components/BalanceCard";
@@ -8,7 +8,7 @@ import { BudgetOverview } from "@/modules/dashboard/components/BudgetOverview";
 import { ExpenseChart } from "@/modules/dashboard/components/ExpenseChart";
 import { IncomeVsExpense } from "@/modules/dashboard/components/IncomeVsExpense";
 import { MonthTransactions } from "@/modules/dashboard/components/MonthTransactions";
-import type { DashboardData } from "@/types";
+import { useDashboard } from "@/modules/dashboard/hooks/useDashboard";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -16,9 +16,6 @@ const MONTH_NAMES = [
 ];
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
@@ -48,24 +45,7 @@ export default function DashboardPage() {
     setYear(now.getFullYear());
   }
 
-  const fetchDashboard = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch(`/api/dashboard?month=${month}&year=${year}`);
-      const json = await res.json();
-      if (json.data) {
-        setData(json.data);
-      }
-    } catch {
-      console.error("Erro ao carregar dashboard");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [month, year]);
-
-  useEffect(() => {
-    fetchDashboard();
-  }, [fetchDashboard]);
+  const { data, isLoading } = useDashboard(month, year);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -136,7 +116,6 @@ export default function DashboardPage() {
           month={month}
           year={year}
           isLoading={isLoading}
-          onDataChange={fetchDashboard}
         />
       </div>
 

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useOpenSession } from "@/common/hooks/useOpenSession";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/api-client";
+import { useSaveGoal } from "@/modules/goals/hooks/useGoals";
 import { z } from "zod";
 import { formatDateOnly } from "@/lib/dates";
 import { Button } from "@/common/components/ui/button";
@@ -45,37 +48,26 @@ interface GoalFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   goal?: Goal | null;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
-export function GoalForm({
+function GoalFormContent({
   open,
   onOpenChange,
   goal,
   onSuccess,
 }: GoalFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [name, setName] = useState("");
-  const [targetAmount, setTargetAmount] = useState("");
-  const [currentAmount, setCurrentAmount] = useState("");
-  const [deadline, setDeadline] = useState<Date | undefined>();
+  const saveGoal = useSaveGoal();
+  const loading = saveGoal.isPending;
+  const [name, setName] = useState(goal?.name ?? "");
+  const [targetAmount, setTargetAmount] = useState(goal ? String(goal.targetAmount) : "");
+  const [currentAmount, setCurrentAmount] = useState(goal ? String(goal.currentAmount) : "");
+  const [deadline, setDeadline] = useState<Date | undefined>(
+    goal?.deadline ? new Date(goal.deadline) : undefined
+  );
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!goal;
-
-  useEffect(() => {
-    if (goal) {
-      setName(goal.name);
-      setTargetAmount(String(goal.targetAmount));
-      setCurrentAmount(String(goal.currentAmount));
-      setDeadline(goal.deadline ? new Date(goal.deadline) : undefined);
-    } else {
-      setName("");
-      setTargetAmount("");
-      setCurrentAmount("");
-      setDeadline(undefined);
-    }
-  }, [goal, open]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -96,8 +88,6 @@ export function GoalForm({
     const parsedTarget = parseFloat(result.data.targetAmount);
     const parsedCurrent = result.data.currentAmount ? parseFloat(result.data.currentAmount) : 0;
 
-    setLoading(true);
-
     try {
       const payload = {
         name: name.trim(),
@@ -106,30 +96,15 @@ export function GoalForm({
         deadline: deadline ? formatDateOnly(deadline) : null,
       };
 
-      const url = isEditing ? `/api/goals/${goal.id}` : "/api/goals";
-
-      const res = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Erro ao salvar meta");
-        return;
-      }
+      await saveGoal.mutateAsync({ id: isEditing ? goal.id : undefined, payload });
 
       toast.success(
         isEditing ? "Meta atualizada com sucesso" : "Meta criada com sucesso"
       );
       onOpenChange(false);
-      onSuccess();
-    } catch {
-      toast.error("Erro ao salvar meta");
-    } finally {
-      setLoading(false);
+      onSuccess?.();
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao salvar meta"));
     }
   }
 
@@ -260,4 +235,10 @@ export function GoalForm({
       </DialogContent>
     </Dialog>
   );
+}
+
+
+export function GoalForm(props: GoalFormProps) {
+  const session = useOpenSession(props.open);
+  return <GoalFormContent key={`${session}-${props.goal?.id ?? "new"}`} {...props} />;
 }

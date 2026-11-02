@@ -12,8 +12,10 @@ import {
   SelectValue,
 } from "@/common/components/ui/select";
 import { Badge } from "@/common/components/ui/badge";
+import { useCards } from "@/modules/cards/hooks/useCards";
+import { useCategories } from "@/modules/categories/hooks/useCategories";
 import { useDebounce } from "@/common/hooks/useDebounce";
-import type { Card, Category, TransactionType, PaymentType } from "@/types";
+import type { TransactionType, PaymentType } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
 
 interface TransactionFiltersProps {
@@ -41,49 +43,16 @@ export function TransactionFilters({
   const [search, setSearch] = useState("");
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
-  const [categories, setCategories] = useState<Category[]>([]);
   const [cardId, setCardId] = useState("ALL");
   const [paid, setPaid] = useState("ALL");
   const [isFixed, setIsFixed] = useState("ALL");
   const [paymentType, setPaymentType] = useState("ALL");
-  const [cards, setCards] = useState<Card[]>([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const debouncedSearch = useDebounce(search, 300);
 
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const url =
-          type === "ALL" ? "/api/categories" : `/api/categories?type=${type}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        if (json.data) {
-          setCategories(json.data);
-        }
-      } catch {
-        setCategories([]);
-      }
-    }
-
-    fetchCategories();
-  }, [type]);
-
-  useEffect(() => {
-    async function fetchCards() {
-      try {
-        const res = await fetch("/api/cards");
-        const json = await res.json();
-        if (json.data) {
-          setCards(json.data);
-        }
-      } catch {
-        setCards([]);
-      }
-    }
-
-    fetchCards();
-  }, []);
+  const { data: categories = [] } = useCategories(type === "ALL" ? undefined : type);
+  const { data: cards = [] } = useCards();
 
   useEffect(() => {
     onFilterChange({

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/api-client";
+import { useCategories, useDeleteCategory } from "@/modules/categories/hooks/useCategories";
 import { Button } from "@/common/components/ui/button";
 import { Card, CardContent } from "@/common/components/ui/card";
 import { Badge } from "@/common/components/ui/badge";
@@ -18,29 +20,16 @@ import { CategoryForm } from "@/modules/categories/components/CategoryForm";
 import type { Category } from "@/types";
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: categories = [], isLoading, isError } = useCategories();
+  const deleteCategory = useDeleteCategory();
   const [formOpen, setFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchCategories = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch("/api/categories");
-      const json = await res.json();
-      if (json.data) setCategories(json.data);
-    } catch {
-      toast.error("Erro ao carregar categorias");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const deleting = deleteCategory.isPending;
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (isError) toast.error("Erro ao carregar categorias");
+  }, [isError]);
 
   function handleEdit(category: Category) {
     setEditingCategory(category);
@@ -54,26 +43,13 @@ export default function CategoriesPage() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    setDeleting(true);
 
     try {
-      const res = await fetch(`/api/categories/${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Erro ao excluir categoria");
-        return;
-      }
-
+      await deleteCategory.mutateAsync(deleteTarget.id);
       toast.success("Categoria excluída com sucesso");
       setDeleteTarget(null);
-      fetchCategories();
-    } catch {
-      toast.error("Erro ao excluir categoria");
-    } finally {
-      setDeleting(false);
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao excluir categoria"));
     }
   }
 
@@ -129,7 +105,6 @@ export default function CategoriesPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         category={editingCategory}
-        onSuccess={fetchCategories}
       />
 
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>

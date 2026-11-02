@@ -20,7 +20,7 @@ import {
 } from "@/common/components/ui/dialog";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { Badge } from "@/common/components/ui/badge";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, truncateText } from "@/lib/utils";
 import type { CategorySummary, Transaction } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS } from "@/types";
 import type { PaymentType } from "@/types";
@@ -242,7 +242,7 @@ function CategoryDetailModal({
               <div className="flex-1 min-w-0 space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <p className="text-sm font-medium truncate" title={t.description}>
-                    {t.description.length > 40 ? t.description.slice(0, 40) + "…" : t.description}
+                    {truncateText(t.description)}
                   </p>
                   {t.isFixed && (
                     <Badge

@@ -45,3 +45,9 @@ export function calculatePercentage(current: number, target: number): number {
   if (target === 0) return 0;
   return Math.min(Math.round((current / target) * 100), 100);
 }
+
+export const DESCRIPTION_MAX_LENGTH = 40;
+
+export function truncateText(text: string, max = DESCRIPTION_MAX_LENGTH): string {
+  return text.length > max ? text.slice(0, max) + "…" : text;
+}

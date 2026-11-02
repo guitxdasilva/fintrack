@@ -283,3 +283,43 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+const bulkDeleteSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, "Selecione ao menos uma transação").max(500),
+});
+
+/** Deletes several transactions at once. */
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const result = bulkDeleteSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await prisma.transaction.deleteMany({
+      where: { id: { in: result.data.ids }, userId: session.user.id },
+    });
+
+    return NextResponse.json({
+      data: {
+        count: deleted.count,
+        message: `${deleted.count} transação(ões) excluída(s)`,
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Erro ao excluir transações" },
+      { status: 500 }
+    );
+  }
+}

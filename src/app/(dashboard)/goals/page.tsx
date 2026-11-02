@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Target } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/api-client";
+import { useGoals, useDeleteGoal } from "@/modules/goals/hooks/useGoals";
 import { Button } from "@/common/components/ui/button";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { EmptyState } from "@/common/components/ui/empty-state";
@@ -18,29 +20,16 @@ import { GoalForm } from "@/modules/goals/components/GoalForm";
 import type { Goal } from "@/types";
 
 export default function GoalsPage() {
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: goals = [], isLoading, isError } = useGoals();
+  const deleteGoal = useDeleteGoal();
   const [formOpen, setFormOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Goal | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchGoals = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch("/api/goals");
-      const json = await res.json();
-      if (json.data) setGoals(json.data);
-    } catch {
-      toast.error("Erro ao carregar metas");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const deleting = deleteGoal.isPending;
 
   useEffect(() => {
-    fetchGoals();
-  }, [fetchGoals]);
+    if (isError) toast.error("Erro ao carregar metas");
+  }, [isError]);
 
   function handleEdit(goal: Goal) {
     setEditingGoal(goal);
@@ -54,26 +43,13 @@ export default function GoalsPage() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    setDeleting(true);
 
     try {
-      const res = await fetch(`/api/goals/${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Erro ao excluir meta");
-        return;
-      }
-
+      await deleteGoal.mutateAsync(deleteTarget.id);
       toast.success("Meta excluída com sucesso");
       setDeleteTarget(null);
-      fetchGoals();
-    } catch {
-      toast.error("Erro ao excluir meta");
-    } finally {
-      setDeleting(false);
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao excluir meta"));
     }
   }
 
@@ -158,7 +134,6 @@ export default function GoalsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         goal={editingGoal}
-        onSuccess={fetchGoals}
       />
 
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>

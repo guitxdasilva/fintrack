@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { PiggyBank, AlertTriangle, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
-import type { BudgetSummary } from "@/types";
+import { useBudget } from "@/modules/dashboard/hooks/useDashboard";
 
 interface BudgetOverviewProps {
   month: number;
@@ -15,27 +14,8 @@ interface BudgetOverviewProps {
 }
 
 export function BudgetOverview({ month, year, isLoading: parentLoading }: BudgetOverviewProps) {
-  const [budgets, setBudgets] = useState<BudgetSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchBudgets = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/budget?month=${month}&year=${year}`);
-      const json = await res.json();
-      if (json.data) {
-        setBudgets(json.data.budgets);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, [month, year]);
-
-  useEffect(() => {
-    fetchBudgets();
-  }, [fetchBudgets]);
+  const { data, isLoading: loading } = useBudget(month, year);
+  const budgets = data?.budgets ?? [];
 
   const isPageLoading = parentLoading || loading;
 

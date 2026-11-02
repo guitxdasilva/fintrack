@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -15,6 +15,11 @@ import {
   Tag,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useOpenSession } from "@/common/hooks/useOpenSession";
+import { invalidateFinancialData } from "@/lib/query-keys";
+import { useCards } from "@/modules/cards/hooks/useCards";
+import { useCategories } from "@/modules/categories/hooks/useCategories";
 import { Button } from "@/common/components/ui/button";
 import { Label } from "@/common/components/ui/label";
 import {
@@ -33,8 +38,7 @@ import {
 } from "@/common/components/ui/select";
 import { Badge } from "@/common/components/ui/badge";
 import { Separator } from "@/common/components/ui/separator";
-import { formatCurrency } from "@/lib/utils";
-import type { Category, Card as CardType } from "@/types";
+import { formatCurrency, truncateText } from "@/lib/utils";
 import { BANK_OPTIONS } from "@/lib/import/types";
 import { matchCategories } from "@/lib/import/category-matcher";
 
@@ -48,12 +52,15 @@ interface ParsedTransaction {
 interface ImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 type Step = "upload" | "preview" | "importing";
 
-export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProps) {
+function ImportDialogContent({ open, onOpenChange, onSuccess }: ImportDialogProps) {
+  const queryClient = useQueryClient();
+  const { data: categories = [] } = useCategories();
+  const { data: cards = [] } = useCards();
   const [step, setStep] = useState<Step>("upload");
   const [bank, setBank] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -61,47 +68,11 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
   const [transactions, setTransactions] = useState<ParsedTransaction[]>([]);
   const [selectedIdxs, setSelectedIdxs] = useState<Set<number>>(new Set());
   const [parseErrors, setParseErrors] = useState<string[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [cards, setCards] = useState<CardType[]>([]);
   const [txCategories, setTxCategories] = useState<Map<number, string>>(new Map());
   const [defaultCategoryId, setDefaultCategoryId] = useState("");
   const [cardId, setCardId] = useState("");
   const [cardType, setCardType] = useState<"CREDIT" | "DEBIT" | "">("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open) {
-      setStep("upload");
-      setBank("");
-      setFile(null);
-      setTransactions([]);
-      setSelectedIdxs(new Set());
-      setParseErrors([]);
-      setTxCategories(new Map());
-      setDefaultCategoryId("");
-      setCardId("");
-      setCardType("");
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    async function fetchData() {
-      try {
-        const [catRes, cardRes] = await Promise.all([
-          fetch("/api/categories"),
-          fetch("/api/cards"),
-        ]);
-        const catJson = await catRes.json();
-        const cardJson = await cardRes.json();
-        if (catJson.data) setCategories(catJson.data);
-        if (cardJson.data) setCards(cardJson.data);
-      } catch {
-      }
-    }
-    fetchData();
-  }, [open]);
 
   function toggleSelection(idx: number) {
     setSelectedIdxs((prev) => {
@@ -243,8 +214,9 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
       }
 
       toast.success(json.data?.message || "Transações importadas!");
+      await invalidateFinancialData(queryClient);
       onOpenChange(false);
-      onSuccess();
+      onSuccess?.();
     } catch {
       toast.error("Erro ao importar transações");
       setStep("preview");
@@ -439,7 +411,7 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
 
                       <div className="flex-1 min-w-0 overflow-hidden">
                         <p className="text-sm font-medium" title={t.description}>
-                          {t.description.length > 40 ? t.description.slice(0, 40) + "…" : t.description}
+                          {truncateText(t.description)}
                         </p>
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-xs text-muted-foreground">
@@ -606,4 +578,9 @@ export function ImportDialog({ open, onOpenChange, onSuccess }: ImportDialogProp
       </DialogContent>
     </Dialog>
   );
+}
+
+export function ImportDialog(props: ImportDialogProps) {
+  const session = useOpenSession(props.open);
+  return <ImportDialogContent key={session} {...props} />;
 }

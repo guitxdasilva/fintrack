@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Pencil, Trash2, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/api-client";
+import { useCards, useDeleteCard } from "@/modules/cards/hooks/useCards";
 import { Button } from "@/common/components/ui/button";
 import { Card, CardContent } from "@/common/components/ui/card";
 import { Skeleton } from "@/common/components/ui/skeleton";
@@ -19,29 +21,16 @@ import type { Card as CardType } from "@/types";
 import { formatClosingDayDescription } from "@/lib/invoice";
 
 export default function CardsPage() {
-  const [cards, setCards] = useState<CardType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: cards = [], isLoading, isError } = useCards();
+  const deleteCard = useDeleteCard();
   const [formOpen, setFormOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CardType | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CardType | null>(null);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchCards = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch("/api/cards");
-      const json = await res.json();
-      if (json.data) setCards(json.data);
-    } catch {
-      toast.error("Erro ao carregar cartões");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const deleting = deleteCard.isPending;
 
   useEffect(() => {
-    fetchCards();
-  }, [fetchCards]);
+    if (isError) toast.error("Erro ao carregar cartões");
+  }, [isError]);
 
   function handleEdit(card: CardType) {
     setEditingCard(card);
@@ -55,26 +44,13 @@ export default function CardsPage() {
 
   async function handleDelete() {
     if (!deleteTarget) return;
-    setDeleting(true);
 
     try {
-      const res = await fetch(`/api/cards/${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Erro ao excluir cartão");
-        return;
-      }
-
+      await deleteCard.mutateAsync(deleteTarget.id);
       toast.success("Cartão excluído");
       setDeleteTarget(null);
-      fetchCards();
-    } catch {
-      toast.error("Erro ao excluir cartão");
-    } finally {
-      setDeleting(false);
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao excluir cartão"));
     }
   }
 
@@ -152,7 +128,6 @@ export default function CardsPage() {
         open={formOpen}
         onOpenChange={setFormOpen}
         card={editingCard}
-        onSuccess={fetchCards}
       />
 
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>

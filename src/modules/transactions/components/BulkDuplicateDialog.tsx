@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useOpenSession } from "@/common/hooks/useOpenSession";
+import { invalidateFinancialData } from "@/lib/query-keys";
+import { useTransactions } from "@/modules/transactions/hooks/useTransactions";
 import { Copy, AlertTriangle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -20,7 +24,7 @@ import {
 import { Button } from "@/common/components/ui/button";
 import { Skeleton } from "@/common/components/ui/skeleton";
 import { Badge } from "@/common/components/ui/badge";
-import { formatCurrency, getTransactionColor } from "@/lib/utils";
+import { formatCurrency, getTransactionColor, truncateText } from "@/lib/utils";
 import type { Transaction, TransactionType } from "@/types";
 
 const MONTH_NAMES = [
@@ -33,10 +37,10 @@ type FilterType = "ALL" | "INCOME" | "EXPENSE";
 interface BulkDuplicateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
-export function BulkDuplicateDialog({
+function BulkDuplicateDialogContent({
   open,
   onOpenChange,
   onSuccess,
@@ -55,9 +59,24 @@ export function BulkDuplicateDialog({
 
   // Filter & selection
   const [filter, setFilter] = useState<FilterType>("ALL");
-  const [sourceTransactions, setSourceTransactions] = useState<Transaction[]>([]);
+  const queryClient = useQueryClient();
+  const { data: sourceData, isFetching: loadingSource } = useTransactions({
+    month: String(sourceMonth),
+    year: String(sourceYear),
+    limit: "200",
+  }, open);
+  // Exclude installment transactions — they auto-generate across months
+  const sourceTransactions: Transaction[] = (sourceData?.data ?? []).filter(
+    (t) => !t.installmentGroupId
+  );
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [loadingSource, setLoadingSource] = useState(false);
+
+  // Select everything whenever a new source month finishes loading
+  const [selectionSource, setSelectionSource] = useState<typeof sourceData>();
+  if (sourceData !== selectionSource && !loadingSource) {
+    setSelectionSource(sourceData);
+    setSelectedIds(new Set(sourceTransactions.map((t) => t.id)));
+  }
 
   // State
   const [duplicating, setDuplicating] = useState(false);
@@ -66,51 +85,6 @@ export function BulkDuplicateDialog({
   // Generate year options
   const currentYear = now.getFullYear();
   const years = Array.from({ length: 4 }, (_, i) => currentYear - 1 + i);
-
-  // Fetch transactions for source month
-  const fetchSourceTransactions = useCallback(async () => {
-    setLoadingSource(true);
-    setErrorMsg(null);
-    try {
-      const params = new URLSearchParams({
-        month: String(sourceMonth),
-        year: String(sourceYear),
-        limit: "200",
-      });
-
-      const res = await fetch(`/api/transactions?${params.toString()}`);
-      const json = await res.json();
-      const allData: Transaction[] = json.data || [];
-      // Exclude installment transactions — they auto-generate across months
-      const data = allData.filter((t) => !t.installmentGroupId);
-      setSourceTransactions(data);
-      setSelectedIds(new Set(data.map((t) => t.id)));
-    } catch {
-      setSourceTransactions([]);
-      setSelectedIds(new Set());
-    } finally {
-      setLoadingSource(false);
-    }
-  }, [sourceMonth, sourceYear]);
-
-  useEffect(() => {
-    if (open) {
-      fetchSourceTransactions();
-    }
-  }, [open, fetchSourceTransactions]);
-
-  // Reset state when dialog opens
-  useEffect(() => {
-    if (open) {
-      setFilter("ALL");
-      setErrorMsg(null);
-      setSourceMonth(now.getMonth());
-      setSourceYear(now.getFullYear());
-      setTargetMonth(nextMonth);
-      setTargetYear(nextYear);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
 
   // Filter displayed transactions
   const displayedTransactions = sourceTransactions.filter((t) => {
@@ -201,8 +175,9 @@ export function BulkDuplicateDialog({
       toast.success(
         `${json.count} transação(ões) duplicada(s) para ${MONTH_NAMES[targetMonth]} de ${targetYear}`
       );
+      await invalidateFinancialData(queryClient);
       onOpenChange(false);
-      onSuccess();
+      onSuccess?.();
     } catch {
       toast.error("Erro ao duplicar transações");
     } finally {
@@ -349,7 +324,7 @@ export function BulkDuplicateDialog({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate" title={t.description}>
-                        {t.description.length > 40 ? t.description.slice(0, 40) + "…" : t.description}
+                        {truncateText(t.description)}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5">
@@ -444,4 +419,9 @@ export function BulkDuplicateDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+export function BulkDuplicateDialog(props: BulkDuplicateDialogProps) {
+  const session = useOpenSession(props.open);
+  return <BulkDuplicateDialogContent key={session} {...props} />;
 }

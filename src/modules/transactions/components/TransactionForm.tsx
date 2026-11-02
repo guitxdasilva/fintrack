@@ -1,6 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useOpenSession } from "@/common/hooks/useOpenSession";
+import { errorMessage } from "@/lib/api-client";
+import { useCards } from "@/modules/cards/hooks/useCards";
+import { useCategories } from "@/modules/categories/hooks/useCategories";
+import { useSaveTransaction } from "@/modules/transactions/hooks/useTransactions";
 import { CalendarIcon, Pin, ShoppingBag, Repeat } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -30,7 +35,7 @@ import {
 import { Calendar } from "@/common/components/ui/calendar";
 import { cn, formatCurrency } from "@/lib/utils";
 import { formatDateOnly } from "@/lib/dates";
-import type { Transaction, Category, TransactionType, Card, PaymentType } from "@/types";
+import type { Transaction, TransactionType, PaymentType } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS, PAYMENT_TYPES } from "@/types";
 
 const transactionSchema = z.object({
@@ -54,94 +59,47 @@ interface TransactionFormProps {
   onOpenChange: (open: boolean) => void;
   transaction?: Transaction | null;
   defaultType?: TransactionType;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
-export function TransactionForm({
+function TransactionFormContent({
   open,
   onOpenChange,
   transaction,
   defaultType = "EXPENSE",
   onSuccess,
 }: TransactionFormProps) {
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [cards, setCards] = useState<Card[]>([]);
-  const [type, setType] = useState<TransactionType>("EXPENSE");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [paymentType, setPaymentType] = useState<PaymentType | "">("");
-  const [cardId, setCardId] = useState("");
-  const [cardType, setCardType] = useState<"CREDIT" | "DEBIT" | "">("")
+  const saveTransaction = useSaveTransaction();
+  const loading = saveTransaction.isPending;
+  const [type, setType] = useState<TransactionType>(transaction?.type ?? defaultType);
+  const [description, setDescription] = useState(transaction?.description ?? "");
+  const [amount, setAmount] = useState(transaction ? String(transaction.amount) : "");
+  const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? "");
+  const [paymentType, setPaymentType] = useState<PaymentType | "">(
+    (transaction?.paymentType as PaymentType) || ""
+  );
+  const [cardId, setCardId] = useState(transaction?.cardId || "");
+  const [cardType, setCardType] = useState<"CREDIT" | "DEBIT" | "">(
+    (transaction?.cardType as "CREDIT" | "DEBIT") || ""
+  );
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState("2");
-  const [isFixed, setIsFixed] = useState(false);
+  const [isFixed, setIsFixed] = useState(transaction?.isFixed || false);
   const [fixedMonths, setFixedMonths] = useState("");
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date>(() =>
+    transaction
+      ? new Date(transaction.purchaseDate ?? transaction.date)
+      : new Date()
+  );
+  const { data: categories = [], isError: categoriesError } = useCategories(type);
+  const { data: cards = [] } = useCards();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const isEditing = !!transaction;
 
   useEffect(() => {
-    if (transaction) {
-      setType(transaction.type);
-      setDescription(transaction.description);
-      setAmount(String(transaction.amount));
-      setCategoryId(transaction.categoryId);
-      setPaymentType((transaction.paymentType as PaymentType) || "");
-      setCardId(transaction.cardId || "");
-      setCardType((transaction.cardType as "CREDIT" | "DEBIT") || "");
-      setIsInstallment(false);
-      setInstallments("2");
-      setIsFixed(transaction.isFixed || false);
-      setFixedMonths("");
-      setDate(transaction.purchaseDate ? new Date(transaction.purchaseDate) : new Date(transaction.date));
-    } else {
-      setType(defaultType);
-      setDescription("");
-      setAmount("");
-      setCategoryId("");
-      setPaymentType("");
-      setCardId("");
-      setCardType("");
-      setIsInstallment(false);
-      setInstallments("2");
-      setIsFixed(false);
-      setFixedMonths("");
-      setDate(new Date());
-    }
-  }, [transaction, open, defaultType]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    async function fetchCategories() {
-      try {
-        const res = await fetch(`/api/categories?type=${type}`);
-        const json = await res.json();
-        if (json.data) {
-          setCategories(json.data);
-        }
-      } catch {
-        toast.error("Erro ao carregar categorias");
-      }
-    }
-
-    fetchCategories();
-
-    async function fetchCards() {
-      try {
-        const res = await fetch("/api/cards");
-        const json = await res.json();
-        if (json.data) setCards(json.data);
-      } catch {
-        // silently fail
-      }
-    }
-
-    fetchCards();
-  }, [type, open]);
+    if (categoriesError) toast.error("Erro ao carregar categorias");
+  }, [categoriesError]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -161,14 +119,12 @@ export function TransactionForm({
 
     const parsedAmount = parseFloat(result.data.amount);
 
-    setLoading(true);
+    if (paymentType === "CARD" && !cardType) {
+      toast.error("Selecione se é Crédito ou Débito");
+      return;
+    }
 
     try {
-      if (paymentType === "CARD" && !cardType) {
-        toast.error("Selecione se é Crédito ou Débito");
-        return;
-      }
-
       const payload = {
         amount: parsedAmount,
         type,
@@ -187,22 +143,10 @@ export function TransactionForm({
           : {}),
       };
 
-      const url = isEditing
-        ? `/api/transactions/${transaction.id}`
-        : "/api/transactions";
-
-      const res = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await saveTransaction.mutateAsync({
+        id: isEditing ? transaction.id : undefined,
+        payload,
       });
-
-      const json = await res.json();
-
-      if (!res.ok) {
-        toast.error(json.error || "Erro ao salvar transação");
-        return;
-      }
 
       toast.success(
         isEditing
@@ -214,11 +158,9 @@ export function TransactionForm({
               : "Transação criada com sucesso"
       );
       onOpenChange(false);
-      onSuccess();
-    } catch {
-      toast.error("Erro ao salvar transação");
-    } finally {
-      setLoading(false);
+      onSuccess?.();
+    } catch (error) {
+      toast.error(errorMessage(error, "Erro ao salvar transação"));
     }
   }
 
@@ -581,5 +523,15 @@ export function TransactionForm({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export function TransactionForm(props: TransactionFormProps) {
+  const session = useOpenSession(props.open);
+  return (
+    <TransactionFormContent
+      key={`${session}-${props.transaction?.id ?? props.defaultType ?? "new"}`}
+      {...props}
+    />
   );
 }
