@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
       const created = await prisma.transaction.createMany({ data });
 
       return NextResponse.json(
-        { message: `Despesa fixa criada para ${created.count} meses`, count: created.count },
+        { message: `${type === "INCOME" ? "Receita" : "Despesa"} fixa criada para ${created.count} meses`, count: created.count },
         { status: 201 }
       );
     }

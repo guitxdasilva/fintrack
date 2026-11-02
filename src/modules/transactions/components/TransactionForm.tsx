@@ -54,6 +54,13 @@ const transactionSchema = z.object({
     .min(1, "Selecione uma categoria"),
 });
 
+/** Fixed income/expenses are generated for this many months by default. */
+const DEFAULT_FIXED_MONTHS = "12";
+
+function addMonthsLocal(date: Date, months: number): Date {
+  return new Date(date.getFullYear(), date.getMonth() + months, 1);
+}
+
 type FieldErrors = Partial<Record<keyof z.infer<typeof transactionSchema>, string>>;
 
 interface TransactionFormProps {
@@ -87,7 +94,7 @@ function TransactionFormContent({
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState("2");
   const [isFixed, setIsFixed] = useState(transaction?.isFixed || false);
-  const [fixedMonths, setFixedMonths] = useState("");
+  const [fixedMonths, setFixedMonths] = useState(DEFAULT_FIXED_MONTHS);
   const [date, setDate] = useState<Date>(() =>
     transaction
       ? new Date(transaction.purchaseDate ?? transaction.date)
@@ -135,14 +142,14 @@ function TransactionFormContent({
         description: description.trim(),
         date: formatDateOnly(date),
         categoryId,
-        isFixed: type === "EXPENSE" ? isFixed : false,
+        isFixed,
         paymentType: type === "EXPENSE" && !isFixed ? (paymentType || undefined) : undefined,
         cardId: type === "EXPENSE" && !isFixed && paymentType === "CARD" && cardId ? cardId : undefined,
         cardType: type === "EXPENSE" && !isFixed && paymentType === "CARD" && cardType ? cardType : undefined,
         ...(type === "EXPENSE" && !isFixed && isInstallment && !isEditing
           ? { installments: parseInt(installments) }
           : {}),
-        ...(type === "EXPENSE" && isFixed && fixedMonths && parseInt(fixedMonths) >= 2 && !isEditing
+        ...(isFixed && fixedMonths && parseInt(fixedMonths) >= 2 && !isEditing
           ? { fixedMonths: parseInt(fixedMonths) }
           : {}),
         ...(editingSeries ? { scope } : {}),
@@ -161,8 +168,8 @@ function TransactionFormContent({
             : "Transação atualizada com sucesso"
           : type === "EXPENSE" && isInstallment
             ? `Despesa parcelada em ${installments}x criada com sucesso`
-            : type === "EXPENSE" && isFixed && fixedMonths && parseInt(fixedMonths) >= 2
-              ? `Despesa fixa criada para ${fixedMonths} meses`
+            : isFixed && fixedMonths && parseInt(fixedMonths) >= 2
+              ? `${type === "INCOME" ? "Receita" : "Despesa"} fixa criada para ${fixedMonths} meses`
               : "Transação criada com sucesso"
       );
       onOpenChange(false);
@@ -231,38 +238,36 @@ function TransactionFormContent({
             </div>
           )}
 
-          {/* Fixed vs Variable toggle - only for EXPENSE */}
-          {type === "EXPENSE" && (
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant={!isFixed ? "default" : "outline"}
-                className={cn(
-                  "gap-2",
-                  !isFixed && "bg-orange-600 hover:bg-orange-700 text-white"
-                )}
-                onClick={() => setIsFixed(false)}
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Variável
-              </Button>
-              <Button
-                type="button"
-                variant={isFixed ? "default" : "outline"}
-                className={cn(
-                  "gap-2",
-                  isFixed && "bg-blue-600 hover:bg-blue-700 text-white"
-                )}
-                onClick={() => setIsFixed(true)}
-              >
-                <Pin className="h-4 w-4" />
-                Fixa
-              </Button>
-            </div>
-          )}
+          {/* Fixed vs one-off toggle */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant={!isFixed ? "default" : "outline"}
+              className={cn(
+                "gap-2",
+                !isFixed && "bg-orange-600 hover:bg-orange-700 text-white"
+              )}
+              onClick={() => setIsFixed(false)}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              {type === "INCOME" ? "Avulsa" : "Variável"}
+            </Button>
+            <Button
+              type="button"
+              variant={isFixed ? "default" : "outline"}
+              className={cn(
+                "gap-2",
+                isFixed && "bg-blue-600 hover:bg-blue-700 text-white"
+              )}
+              onClick={() => setIsFixed(true)}
+            >
+              <Pin className="h-4 w-4" />
+              Fixa
+            </Button>
+          </div>
 
-          {/* Fixed months - recurrence for fixed expenses */}
-          {type === "EXPENSE" && isFixed && !isEditing && (
+          {/* Fixed months - recurrence for fixed income/expenses */}
+          {isFixed && !isEditing && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Repeat className="h-4 w-4 text-blue-500" />
@@ -271,15 +276,19 @@ function TransactionFormContent({
               <Input
                 id="fixedMonths"
                 type="number"
-                min="2"
+                min="1"
                 max="60"
-                placeholder="Ex: 12 (deixe vazio para criar só uma vez)"
+                placeholder="Ex: 12"
                 value={fixedMonths}
                 onChange={(e) => setFixedMonths(e.target.value)}
               />
               {fixedMonths && parseInt(fixedMonths) >= 2 && amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Serão criadas <span className="font-medium">{parseInt(fixedMonths)} transações</span> de{" "}
+                  Serão criadas <span className="font-medium">{parseInt(fixedMonths)} transações</span>, até{" "}
+                  <span className="font-medium">
+                    {format(addMonthsLocal(date, parseInt(fixedMonths) - 1), "MMM/yyyy", { locale: ptBR })}
+                  </span>
+                  , de{" "}
                   <span className="font-medium">{formatCurrency(parseFloat(amount))}</span> cada
                   {parseInt(fixedMonths) > 1 && (
                     <span>
@@ -490,8 +499,8 @@ function TransactionFormContent({
 
           <div className="space-y-2">
             <Label>
-              {type === "EXPENSE" && isFixed
-                ? "Data de Vencimento"
+              {isFixed
+                ? type === "INCOME" ? "Data de Recebimento" : "Data de Vencimento"
                 : type === "EXPENSE" && paymentType === "CARD" && cardType === "CREDIT"
                   ? "Data da Compra"
                   : "Data"}
