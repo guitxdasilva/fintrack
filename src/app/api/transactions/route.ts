@@ -3,15 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getCreditCardMonthOffset } from "@/lib/invoice";
-import {
-  addMonthsClamped,
-  dayRange,
-  firstOfMonthAfter,
-  isDateOnlyString,
-  monthRange,
-  parseDateOnly,
-} from "@/lib/dates";
-import { roundMoney } from "@/lib/money";
+import { dayRange, isDateOnlyString, monthRange, parseDateOnly } from "@/lib/dates";
+import { scheduleDate, splitInstallments } from "@/lib/transactions/schedule";
 
 const createTransactionSchema = z.object({
   amount: z.number().positive("Valor deve ser positivo"),
@@ -204,21 +197,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "EXPENSE" && installments && installments >= 2) {
-      const installmentAmount = roundMoney(amount / installments);
-      const lastInstallmentAmount = roundMoney(amount - installmentAmount * (installments - 1));
+      const amounts = splitInstallments(amount, installments);
       const groupId = globalThis.crypto.randomUUID();
 
-      const data = Array.from({ length: installments }, (_, i) => {
-        const installmentDate =
-          creditMonthOffset > 0
-            ? firstOfMonthAfter(baseDate, i + creditMonthOffset)
-            : addMonthsClamped(baseDate, i);
-
+      const data = amounts.map((installmentAmount, i) => {
         return {
-          amount: i === installments - 1 ? lastInstallmentAmount : installmentAmount,
+          amount: installmentAmount,
           type: type as "INCOME" | "EXPENSE",
           description: `${description} (${i + 1}/${installments})`,
-          date: installmentDate,
+          date: scheduleDate(baseDate, i, creditMonthOffset),
           purchaseDate: creditMonthOffset > 0 ? baseDate : null,
           userId: session.user!.id!,
           categoryId,
@@ -244,13 +231,11 @@ export async function POST(request: NextRequest) {
       const groupId = globalThis.crypto.randomUUID();
 
       const data = Array.from({ length: fixedMonths }, (_, i) => {
-        const recurringDate = addMonthsClamped(baseDate, i);
-
         return {
           amount,
           type: type as "INCOME" | "EXPENSE",
           description,
-          date: recurringDate,
+          date: scheduleDate(baseDate, i),
           userId: session.user!.id!,
           categoryId,
           paymentType: null as string | null,
@@ -271,10 +256,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const transactionDate =
-      creditMonthOffset > 0
-        ? firstOfMonthAfter(baseDate, creditMonthOffset)
-        : baseDate;
+    const transactionDate = scheduleDate(baseDate, 0, creditMonthOffset);
 
     const transaction = await prisma.transaction.create({
       data: {

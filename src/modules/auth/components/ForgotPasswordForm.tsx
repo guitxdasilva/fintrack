@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, Mail, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import {

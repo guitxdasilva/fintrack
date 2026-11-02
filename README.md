@@ -5,6 +5,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/guitxdasilva/fintrack/actions/workflows/ci.yml"><img src="https://github.com/guitxdasilva/fintrack/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React" />
   <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
@@ -46,6 +47,7 @@
 | **Autenticação** | NextAuth.js v5 (beta) |
 | **PDF** | PDFKit (exportação), pdf-parse (importação) |
 | **Email** | Nodemailer 7 + Gmail SMTP |
+| **Testes** | Vitest + GitHub Actions (lint, typecheck, testes em UTC e America/Sao_Paulo, build) |
 | **Deploy** | Vercel |
 
 ## 📁 Estrutura do Projeto
@@ -102,8 +104,8 @@ src/
 
 ```bash
 # Clone o repositório
-git clone https://github.com/guitxdasilva/finplanix.git
-cd finplanix
+git clone https://github.com/guitxdasilva/fintrack.git
+cd fintrack
 
 # Instale as dependências
 npm install
@@ -154,6 +156,10 @@ Acesse [http://localhost:3000](http://localhost:3000).
 | `npm run dev` | Servidor de desenvolvimento (Turbopack) |
 | `npm run build` | Build de produção |
 | `npm start` | Servidor de produção |
+| `npm test` | Roda os testes (Vitest) |
+| `npm run test:watch` | Testes em modo watch |
+| `npm run typecheck` | Checagem de tipos (tsc) |
+| `npm run lint` | ESLint |
 | `npx prisma studio` | Interface visual do banco de dados |
 | `npx prisma migrate dev` | Executar migrations |
 | `npx prisma db seed` | Popular banco com dados demo |

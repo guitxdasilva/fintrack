@@ -8,8 +8,16 @@
 
 const DATE_ONLY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/** True for a real calendar date in "yyyy-MM-dd" (rejects 2026-02-31). */
 export function isDateOnlyString(value: string): boolean {
-  return DATE_ONLY_RE.test(value);
+  const match = value.match(DATE_ONLY_RE);
+  if (!match) return false;
+  return isValidDate(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+/** `month` is 0-based. */
+export function isValidDate(year: number, month: number, day: number): boolean {
+  return month >= 0 && month <= 11 && day >= 1 && day <= daysInMonth(year, month);
 }
 
 /** Builds a calendar date. `month` is 0-based and may overflow (e.g. 12 → next year). */
@@ -20,7 +28,7 @@ export function dateOnly(year: number, month: number, day: number): Date {
 /** Parses "yyyy-MM-dd" into a calendar date. Throws on invalid input. */
 export function parseDateOnly(value: string): Date {
   const match = value.match(DATE_ONLY_RE);
-  if (!match) {
+  if (!match || !isDateOnlyString(value)) {
     throw new Error(`Invalid date-only string: ${value}`);
   }
   return dateOnly(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
