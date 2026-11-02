@@ -1,5 +1,7 @@
+import { daysInMonth } from "./dates";
+
 export function getLastDayOfMonth(month: number, year: number): number {
-  return new Date(year, month + 1, 0).getDate();
+  return daysInMonth(year, month);
 }
 
 export function getEffectiveClosingDay(
@@ -39,8 +41,8 @@ export function getInvoicePeriod(
     prevYear
   );
 
-  const start = new Date(prevYear, prevMonth, prevEffectiveClosing + 1);
-  const end = new Date(year, month, effectiveClosing, 23, 59, 59, 999);
+  const start = new Date(Date.UTC(prevYear, prevMonth, prevEffectiveClosing + 1));
+  const end = new Date(Date.UTC(year, month, effectiveClosing + 1) - 1);
 
   return { start, end, effectiveClosing };
 }
@@ -55,14 +57,15 @@ export function formatClosingDayDescription(
   return `Dia ${closingDayValue}`;
 }
 
+/** `purchaseDate` must be a calendar date (see lib/dates.ts). */
 export function getCreditCardMonthOffset(
   purchaseDate: Date,
   closingDayType: string,
   closingDayValue: number
 ): number {
-  const month = purchaseDate.getMonth();
-  const year = purchaseDate.getFullYear();
-  const purchaseDay = purchaseDate.getDate();
+  const month = purchaseDate.getUTCMonth();
+  const year = purchaseDate.getUTCFullYear();
+  const purchaseDay = purchaseDate.getUTCDate();
 
   const effectiveClosing = getEffectiveClosingDay(
     closingDayType,

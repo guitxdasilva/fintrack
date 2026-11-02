@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getParser } from "@/lib/import";
+import { parseDateOnly } from "@/lib/dates";
 import type { ParseResult } from "@/lib/import";
 
 export async function POST(request: NextRequest) {
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
         amount: t.amount,
         type: t.type as "INCOME" | "EXPENSE",
         description: t.description,
-        date: new Date(t.date),
+        date: parseDateOnly(t.date.slice(0, 10)),
         userId: session.user!.id!,
         categoryId: t.categoryId,
         paymentType: cardId ? "CARD" : null,

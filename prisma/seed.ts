@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaClient, TransactionType } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import { dateOnly, parseDateOnly } from "../src/lib/dates";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -68,8 +69,8 @@ async function main() {
   ];
 
   for (const tx of transactions) {
-    const date = new Date();
-    date.setDate(date.getDate() - tx.daysAgo);
+    const now = new Date();
+    const date = dateOnly(now.getFullYear(), now.getMonth(), now.getDate() - tx.daysAgo);
 
     await prisma.transaction.create({
       data: {
@@ -91,21 +92,21 @@ async function main() {
         name: "Reserva de emergência",
         targetAmount: 30000,
         currentAmount: 12500,
-        deadline: new Date("2026-12-31"),
+        deadline: parseDateOnly("2026-12-31"),
         userId: user.id,
       },
       {
         name: "Viagem para Europa",
         targetAmount: 15000,
         currentAmount: 5000,
-        deadline: new Date("2027-06-01"),
+        deadline: parseDateOnly("2027-06-01"),
         userId: user.id,
       },
       {
         name: "Notebook novo",
         targetAmount: 8000,
         currentAmount: 6800,
-        deadline: new Date("2026-04-01"),
+        deadline: parseDateOnly("2026-04-01"),
         userId: user.id,
       },
     ],

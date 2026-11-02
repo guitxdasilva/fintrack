@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { monthRange } from "@/lib/dates";
+import { roundMoney, sumMoney } from "@/lib/money";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,11 +18,10 @@ export async function GET(request: NextRequest) {
     const paramYear = searchParams.get("year");
 
     const now = new Date();
-    const targetYear = paramYear ? parseInt(paramYear) : now.getFullYear();
-    const targetMonth = paramMonth ? parseInt(paramMonth) : now.getMonth();
+    const targetYear = paramYear ? parseInt(paramYear) : now.getUTCFullYear();
+    const targetMonth = paramMonth ? parseInt(paramMonth) : now.getUTCMonth();
 
-    const startOfMonth = new Date(targetYear, targetMonth, 1);
-    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59);
+    const { start: startOfMonth, end: endOfMonth } = monthRange(targetYear, targetMonth);
 
     // Get all expense categories with a budget set
     const categories = await prisma.category.findMany({
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
     });
 
     const budgets = categories.map((cat) => {
-      const spent = spentMap.get(cat.id) || 0;
+      const spent = roundMoney(spentMap.get(cat.id) || 0);
       const budget = cat.budget!;
       return {
         categoryId: cat.id,
@@ -70,8 +71,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const totalBudget = budgets.reduce((sum, b) => sum + b.budget, 0);
-    const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+    const totalBudget = sumMoney(budgets, (b) => b.budget);
+    const totalSpent = sumMoney(budgets, (b) => b.spent);
 
     return NextResponse.json({
       data: { budgets, totalBudget, totalSpent },

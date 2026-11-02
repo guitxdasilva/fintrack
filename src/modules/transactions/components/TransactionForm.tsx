@@ -29,6 +29,7 @@ import {
 } from "@/common/components/ui/popover";
 import { Calendar } from "@/common/components/ui/calendar";
 import { cn, formatCurrency } from "@/lib/utils";
+import { formatDateOnly } from "@/lib/dates";
 import type { Transaction, Category, TransactionType, Card, PaymentType } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS, PAYMENT_TYPES } from "@/types";
 
@@ -172,7 +173,7 @@ export function TransactionForm({
         amount: parsedAmount,
         type,
         description: description.trim(),
-        date: date.toISOString(),
+        date: formatDateOnly(date),
         categoryId,
         isFixed: type === "EXPENSE" ? isFixed : false,
         paymentType: type === "EXPENSE" && !isFixed ? (paymentType || undefined) : undefined,

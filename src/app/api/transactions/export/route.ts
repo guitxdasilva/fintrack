@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { dayRange, isDateOnlyString, monthRange, parseDateOnly } from "@/lib/dates";
+import { sumMoney } from "@/lib/money";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,15 +41,21 @@ function buildWhere(searchParams: URLSearchParams, userId: string) {
   }
 
   if (monthParam !== null && yearParam !== null) {
-    const m = parseInt(monthParam);
-    const y = parseInt(yearParam);
-    const start = new Date(y, m, 1);
-    const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
+    const { start, end } = monthRange(parseInt(yearParam), parseInt(monthParam));
     where.date = { gte: start, lte: end };
-  } else if (startDate || endDate) {
+  } else if (
+    (startDate && isDateOnlyString(startDate)) ||
+    (endDate && isDateOnlyString(endDate))
+  ) {
     where.date = {};
-    if (startDate) (where.date as Record<string, unknown>).gte = new Date(startDate);
-    if (endDate) (where.date as Record<string, unknown>).lte = new Date(endDate);
+    if (startDate && isDateOnlyString(startDate)) {
+      const day = parseDateOnly(startDate);
+      (where.date as Record<string, unknown>).gte = dayRange(day, day).start;
+    }
+    if (endDate && isDateOnlyString(endDate)) {
+      const day = parseDateOnly(endDate);
+      (where.date as Record<string, unknown>).lte = dayRange(day, day).end;
+    }
   }
 
   return where;
@@ -126,8 +134,8 @@ function buildPdf(rows: TransactionRow[], monthLabel: string): Promise<Buffer> {
     doc.fontSize(10).font("Helvetica").text(monthLabel, { align: "center" });
     doc.moveDown(0.5);
 
-    const totalIncome = rows.filter((r) => r.type === "Receita").reduce((s, r) => s + r.amount, 0);
-    const totalExpense = rows.filter((r) => r.type === "Despesa").reduce((s, r) => s + r.amount, 0);
+    const totalIncome = sumMoney(rows.filter((r) => r.type === "Receita"), (r) => r.amount);
+    const totalExpense = sumMoney(rows.filter((r) => r.type === "Despesa"), (r) => r.amount);
     const balance = totalIncome - totalExpense;
 
     doc.fontSize(9).font("Helvetica");

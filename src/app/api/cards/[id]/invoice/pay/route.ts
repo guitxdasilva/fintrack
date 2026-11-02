@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInvoicePeriod } from "@/lib/invoice";
+import { monthRange } from "@/lib/dates";
 
 export async function POST(
   req: NextRequest,
@@ -16,10 +17,10 @@ export async function POST(
     const { id } = await params;
     const { searchParams } = new URL(req.url);
     const month = parseInt(
-      searchParams.get("month") || String(new Date().getMonth())
+      searchParams.get("month") || String(new Date().getUTCMonth())
     );
     const year = parseInt(
-      searchParams.get("year") || String(new Date().getFullYear())
+      searchParams.get("year") || String(new Date().getUTCFullYear())
     );
 
     const card = await prisma.card.findFirst({
@@ -46,8 +47,7 @@ export async function POST(
       start = period.start;
       end = period.end;
     } else {
-      start = new Date(year, month, 1);
-      end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+      ({ start, end } = monthRange(year, month));
     }
 
     const result = await prisma.transaction.updateMany({

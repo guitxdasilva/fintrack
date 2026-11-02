@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { z } from "zod";
+import { formatDateOnly } from "@/lib/dates";
 import { Button } from "@/common/components/ui/button";
 import { Input } from "@/common/components/ui/input";
 import { Label } from "@/common/components/ui/label";
@@ -102,7 +103,7 @@ export function GoalForm({
         name: name.trim(),
         targetAmount: parsedTarget,
         currentAmount: parsedCurrent,
-        deadline: deadline?.toISOString() || null,
+        deadline: deadline ? formatDateOnly(deadline) : null,
       };
 
       const url = isEditing ? `/api/goals/${goal.id}` : "/api/goals";

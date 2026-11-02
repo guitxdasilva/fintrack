@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { isDateOnlyString, parseDateOnly } from "@/lib/dates";
 
 const createGoalSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   targetAmount: z.number().positive("Valor alvo deve ser positivo"),
   currentAmount: z.number().min(0).optional().default(0),
-  deadline: z.string().optional(),
+  deadline: z.string().refine(isDateOnlyString, "Data inválida").nullable().optional(),
 });
 
 export async function GET() {
@@ -55,7 +56,7 @@ export async function POST(request: NextRequest) {
         name,
         targetAmount,
         currentAmount,
-        deadline: deadline ? new Date(deadline) : null,
+        deadline: deadline ? parseDateOnly(deadline) : null,
         userId: session.user.id,
       },
     });

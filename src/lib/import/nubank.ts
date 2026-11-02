@@ -1,4 +1,5 @@
 import type { BankParser, ParseResult, ParsedTransaction } from "./types";
+import { dateOnly } from "../dates";
 import {
   parseBrazilianDate,
   parseBrazilianAmount,
@@ -156,7 +157,7 @@ function parsePdf(text: string): ParseResult {
       const amount = parseBrazilianAmount(amountStr);
       if (amount === null || amount === 0) continue;
 
-      const date = new Date(detectedYear, month, day);
+      const date = dateOnly(detectedYear, month, day);
 
       transactions.push({
         date: date.toISOString(),

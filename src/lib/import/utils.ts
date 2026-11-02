@@ -1,3 +1,5 @@
+import { dateOnly } from "../dates";
+
 export function parseBrazilianDate(dateStr: string): Date | null {
   const trimmed = dateStr.trim();
 
@@ -7,13 +9,13 @@ export function parseBrazilianDate(dateStr: string): Date | null {
     const month = parseInt(match[2]) - 1;
     let year = parseInt(match[3]);
     if (year < 100) year += 2000;
-    const d = new Date(year, month, day);
+    const d = dateOnly(year, month, day);
     if (!isNaN(d.getTime())) return d;
   }
 
   match = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (match) {
-    const d = new Date(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
+    const d = dateOnly(parseInt(match[1]), parseInt(match[2]) - 1, parseInt(match[3]));
     if (!isNaN(d.getTime())) return d;
   }
 

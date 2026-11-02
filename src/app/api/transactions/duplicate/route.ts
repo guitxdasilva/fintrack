@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { dateOnly, daysInMonth } from "@/lib/dates";
 import { z } from "zod";
 
 const bulkDuplicateSchema = z.object({
@@ -75,16 +76,13 @@ export async function POST(request: NextRequest) {
     // Create duplicated transactions
     const created = await prisma.transaction.createMany({
       data: transactions.map((t) => {
-        const originalDate = new Date(t.date);
-        const day = originalDate.getDate();
-        const maxDay = new Date(year, month + 1, 0).getDate();
-        const safeDay = Math.min(day, maxDay);
+        const safeDay = Math.min(t.date.getUTCDate(), daysInMonth(year, month));
 
         return {
           amount: t.amount,
           type: t.type,
           description: t.description,
-          date: new Date(year, month, safeDay),
+          date: dateOnly(year, month, safeDay),
           categoryId: t.categoryId,
           paymentType: t.paymentType,
           cardId: t.cardId,

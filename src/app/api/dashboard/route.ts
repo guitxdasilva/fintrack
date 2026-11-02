@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { monthRange } from "@/lib/dates";
+import { roundMoney, sumMoney } from "@/lib/money";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,25 +18,17 @@ export async function GET(request: NextRequest) {
     const paramYear = searchParams.get("year");
 
     const now = new Date();
-    const targetYear = paramYear ? parseInt(paramYear) : now.getFullYear();
-    const targetMonth = paramMonth ? parseInt(paramMonth) : now.getMonth();
+    const targetYear = paramYear ? parseInt(paramYear) : now.getUTCFullYear();
+    const targetMonth = paramMonth ? parseInt(paramMonth) : now.getUTCMonth();
 
-    const startOfMonth = new Date(targetYear, targetMonth, 1);
-    const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59);
+    const { start: startOfMonth, end: endOfMonth } = monthRange(targetYear, targetMonth);
 
     // Last 6 months range for the chart (relative to selected month)
-    const chartStart = new Date(targetYear, targetMonth - 5, 1);
+    const chartStart = monthRange(targetYear, targetMonth - 5).start;
     const chartEnd = endOfMonth;
 
-    const [selectedMonthTransactions, chartTransactions, allMonthTransactions] =
+    const [chartTransactions, selectedMonthTransactions] =
       await Promise.all([
-        prisma.transaction.findMany({
-          where: {
-            userId,
-            date: { gte: startOfMonth, lte: endOfMonth },
-          },
-          include: { category: true },
-        }),
         prisma.transaction.findMany({
           where: {
             userId,
@@ -53,23 +47,29 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
-    const totalIncome = selectedMonthTransactions
-      .filter((t) => t.type === "INCOME")
-      .reduce((sum, t) => sum + t.amount, 0);
+    const amount = (t: { amount: number }) => t.amount;
 
-    const totalExpense = selectedMonthTransactions
-      .filter((t) => t.type === "EXPENSE")
-      .reduce((sum, t) => sum + t.amount, 0);
+    const totalIncome = sumMoney(
+      selectedMonthTransactions.filter((t) => t.type === "INCOME"),
+      amount
+    );
 
-    const totalPaid = selectedMonthTransactions
-      .filter((t) => t.type === "EXPENSE" && t.paid)
-      .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpense = sumMoney(
+      selectedMonthTransactions.filter((t) => t.type === "EXPENSE"),
+      amount
+    );
 
-    const totalPending = selectedMonthTransactions
-      .filter((t) => t.type === "EXPENSE" && !t.paid)
-      .reduce((sum, t) => sum + t.amount, 0);
+    const totalPaid = sumMoney(
+      selectedMonthTransactions.filter((t) => t.type === "EXPENSE" && t.paid),
+      amount
+    );
 
-    const balance = totalIncome - totalExpense;
+    const totalPending = sumMoney(
+      selectedMonthTransactions.filter((t) => t.type === "EXPENSE" && !t.paid),
+      amount
+    );
+
+    const balance = roundMoney(totalIncome - totalExpense);
 
     const expenseMap = new Map<string, { category: string; color: string; total: number }>();
 
@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.total - a.total)
       .map((item) => ({
         ...item,
+        total: roundMoney(item.total),
         percentage: totalExpense > 0 ? Math.round((item.total / totalExpense) * 100) : 0,
       }));
 
@@ -103,14 +104,14 @@ export async function GET(request: NextRequest) {
     ];
 
     for (let i = 5; i >= 0; i--) {
-      const d = new Date(targetYear, targetMonth - i, 1);
-      const key = `${monthNames[d.getMonth()]}/${d.getFullYear().toString().slice(2)}`;
+      const d = new Date(Date.UTC(targetYear, targetMonth - i, 1));
+      const key = `${monthNames[d.getUTCMonth()]}/${d.getUTCFullYear().toString().slice(2)}`;
       monthlyMap.set(key, { income: 0, expense: 0 });
     }
 
     chartTransactions.forEach((t) => {
       const d = new Date(t.date);
-      const key = `${monthNames[d.getMonth()]}/${d.getFullYear().toString().slice(2)}`;
+      const key = `${monthNames[d.getUTCMonth()]}/${d.getUTCFullYear().toString().slice(2)}`;
       const entry = monthlyMap.get(key);
       if (entry) {
         if (t.type === "INCOME") {
@@ -123,8 +124,8 @@ export async function GET(request: NextRequest) {
 
     const monthlyData = Array.from(monthlyMap.entries()).map(([month, data]) => ({
       month,
-      income: data.income,
-      expense: data.expense,
+      income: roundMoney(data.income),
+      expense: roundMoney(data.expense),
     }));
 
     return NextResponse.json({
@@ -134,7 +135,7 @@ export async function GET(request: NextRequest) {
         totalExpense,
         totalPaid,
         totalPending,
-        transactions: allMonthTransactions,
+        transactions: selectedMonthTransactions,
         expensesByCategory,
         monthlyData,
       },

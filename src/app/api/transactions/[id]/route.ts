@@ -3,13 +3,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getCreditCardMonthOffset } from "@/lib/invoice";
+import { firstOfMonthAfter, isDateOnlyString, parseDateOnly } from "@/lib/dates";
 
 const updateTransactionSchema = z.object({
   amount: z.number().positive("Valor deve ser positivo").optional(),
   type: z.enum(["INCOME", "EXPENSE"]).optional(),
   description: z.string().min(1, "Descrição é obrigatória").optional(),
-  date: z.string().min(1, "Data é obrigatória").optional(),
-  purchaseDate: z.string().nullable().optional(),
+  date: z.string().refine(isDateOnlyString, "Data inválida").optional(),
+  purchaseDate: z.string().refine(isDateOnlyString, "Data inválida").nullable().optional(),
   categoryId: z.string().min(1, "Categoria é obrigatória").optional(),
   paymentType: z.enum(["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"]).nullable().optional(),
   cardId: z.string().nullable().optional(),
@@ -70,14 +71,14 @@ export async function PUT(
       data.description = result.data.description;
 
     if (result.data.purchaseDate !== undefined) {
-      data.purchaseDate = result.data.purchaseDate ? new Date(result.data.purchaseDate) : null;
+      data.purchaseDate = result.data.purchaseDate ? parseDateOnly(result.data.purchaseDate) : null;
     }
 
     const effectiveCardType = result.data.cardType !== undefined ? result.data.cardType : existing.cardType;
     const effectiveCardId = result.data.cardId !== undefined ? result.data.cardId : existing.cardId;
 
     if (result.data.date !== undefined) {
-      const newDate = new Date(result.data.date);
+      const newDate = parseDateOnly(result.data.date);
 
       if (effectiveCardType === "CREDIT" && effectiveCardId) {
         const card = await prisma.card.findFirst({
@@ -90,10 +91,7 @@ export async function PUT(
           const installmentShift = existing.currentInstallment && existing.currentInstallment > 1
             ? existing.currentInstallment - 1
             : 0;
-          const billingDate = new Date(newDate);
-          billingDate.setMonth(billingDate.getMonth() + offset + installmentShift);
-          billingDate.setDate(1);
-          data.date = billingDate;
+          data.date = firstOfMonthAfter(newDate, offset + installmentShift);
         } else {
           data.date = newDate;
         }

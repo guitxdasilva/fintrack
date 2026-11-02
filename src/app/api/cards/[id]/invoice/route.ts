@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInvoicePeriod } from "@/lib/invoice";
+import { monthRange } from "@/lib/dates";
+import { sumMoney } from "@/lib/money";
 
 export async function GET(
   req: NextRequest,
@@ -16,10 +18,10 @@ export async function GET(
     const { id } = await params;
     const { searchParams } = new URL(req.url);
     const month = parseInt(
-      searchParams.get("month") || String(new Date().getMonth())
+      searchParams.get("month") || String(new Date().getUTCMonth())
     );
     const year = parseInt(
-      searchParams.get("year") || String(new Date().getFullYear())
+      searchParams.get("year") || String(new Date().getUTCFullYear())
     );
 
     const card = await prisma.card.findFirst({
@@ -49,8 +51,7 @@ export async function GET(
       effectiveClosing = period.effectiveClosing;
     } else {
       // Sem dia de fechamento configurado: usa o mês calendário
-      start = new Date(year, month, 1);
-      end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+      ({ start, end } = monthRange(year, month));
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -63,12 +64,13 @@ export async function GET(
       orderBy: { date: "desc" },
     });
 
-    const total = transactions
-      .filter((t) => t.type === "EXPENSE")
-      .reduce((sum, t) => sum + t.amount, 0);
+    const total = sumMoney(
+      transactions.filter((t) => t.type === "EXPENSE"),
+      (t) => t.amount
+    );
 
     const formatDate = (d: Date) =>
-      `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1)
+      `${d.getUTCDate().toString().padStart(2, "0")}/${(d.getUTCMonth() + 1)
         .toString()
         .padStart(2, "0")}`;
 

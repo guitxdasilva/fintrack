@@ -72,11 +72,9 @@ export function BulkDuplicateDialog({
     setLoadingSource(true);
     setErrorMsg(null);
     try {
-      const startDate = new Date(sourceYear, sourceMonth, 1);
-      const endDate = new Date(sourceYear, sourceMonth + 1, 0, 23, 59, 59);
       const params = new URLSearchParams({
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
+        month: String(sourceMonth),
+        year: String(sourceYear),
         limit: "200",
       });
 

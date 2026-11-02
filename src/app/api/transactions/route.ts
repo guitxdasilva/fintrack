@@ -3,12 +3,21 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getCreditCardMonthOffset } from "@/lib/invoice";
+import {
+  addMonthsClamped,
+  dayRange,
+  firstOfMonthAfter,
+  isDateOnlyString,
+  monthRange,
+  parseDateOnly,
+} from "@/lib/dates";
+import { roundMoney } from "@/lib/money";
 
 const createTransactionSchema = z.object({
   amount: z.number().positive("Valor deve ser positivo"),
   type: z.enum(["INCOME", "EXPENSE"]),
   description: z.string().min(1, "Descrição é obrigatória"),
-  date: z.string().min(1, "Data é obrigatória"),
+  date: z.string().refine(isDateOnlyString, "Data inválida"),
   categoryId: z.string().min(1, "Categoria é obrigatória"),
   paymentType: z.enum(["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"]).optional(),
   cardId: z.string().optional(),
@@ -71,18 +80,24 @@ export async function GET(request: NextRequest) {
     }
 
     if (monthParam !== null && yearParam !== null) {
-      const m = parseInt(monthParam);
-      const y = parseInt(yearParam);
-      const start = new Date(y, m, 1);
-      const end = new Date(y, m + 1, 0, 23, 59, 59, 999);
+      const { start, end } = monthRange(parseInt(yearParam), parseInt(monthParam));
       where.date = { gte: start, lte: end };
-    } else if (startDate || endDate) {
+    } else if (
+      (startDate && isDateOnlyString(startDate)) ||
+      (endDate && isDateOnlyString(endDate))
+    ) {
       where.date = {};
-      if (startDate) {
-        (where.date as Record<string, unknown>).gte = new Date(startDate);
+      if (startDate && isDateOnlyString(startDate)) {
+        (where.date as Record<string, unknown>).gte = dayRange(
+          parseDateOnly(startDate),
+          parseDateOnly(startDate)
+        ).start;
       }
-      if (endDate) {
-        (where.date as Record<string, unknown>).lte = new Date(endDate);
+      if (endDate && isDateOnlyString(endDate)) {
+        (where.date as Record<string, unknown>).lte = dayRange(
+          parseDateOnly(endDate),
+          parseDateOnly(endDate)
+        ).end;
       }
     }
 
@@ -177,43 +192,34 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const baseDate = parseDateOnly(date);
+
     let creditMonthOffset = 0;
     if (cardType === "CREDIT" && card?.closingDayType && card?.closingDayValue) {
       creditMonthOffset = getCreditCardMonthOffset(
-        new Date(date),
+        baseDate,
         card.closingDayType,
         card.closingDayValue
       );
     }
 
     if (type === "EXPENSE" && installments && installments >= 2) {
-      const installmentAmount = Math.round((amount / installments) * 100) / 100;
-      const lastInstallmentAmount = Math.round((amount - installmentAmount * (installments - 1)) * 100) / 100;
+      const installmentAmount = roundMoney(amount / installments);
+      const lastInstallmentAmount = roundMoney(amount - installmentAmount * (installments - 1));
       const groupId = globalThis.crypto.randomUUID();
-      const baseDate = new Date(date);
 
       const data = Array.from({ length: installments }, (_, i) => {
-        const installmentDate = new Date(baseDate);
-        installmentDate.setMonth(installmentDate.getMonth() + i + creditMonthOffset);
-        if (creditMonthOffset > 0) {
-          installmentDate.setDate(1);
-        } else {
-          const maxDay = new Date(
-            installmentDate.getFullYear(),
-            installmentDate.getMonth() + 1,
-            0
-          ).getDate();
-          if (installmentDate.getDate() > maxDay) {
-            installmentDate.setDate(maxDay);
-          }
-        }
+        const installmentDate =
+          creditMonthOffset > 0
+            ? firstOfMonthAfter(baseDate, i + creditMonthOffset)
+            : addMonthsClamped(baseDate, i);
 
         return {
           amount: i === installments - 1 ? lastInstallmentAmount : installmentAmount,
           type: type as "INCOME" | "EXPENSE",
           description: `${description} (${i + 1}/${installments})`,
           date: installmentDate,
-          purchaseDate: creditMonthOffset > 0 ? new Date(date) : null,
+          purchaseDate: creditMonthOffset > 0 ? baseDate : null,
           userId: session.user!.id!,
           categoryId,
           paymentType: paymentType || null,
@@ -236,19 +242,9 @@ export async function POST(request: NextRequest) {
 
     if (isFixed && fixedMonths && fixedMonths >= 2) {
       const groupId = globalThis.crypto.randomUUID();
-      const baseDate = new Date(date);
 
       const data = Array.from({ length: fixedMonths }, (_, i) => {
-        const recurringDate = new Date(baseDate);
-        recurringDate.setMonth(recurringDate.getMonth() + i);
-        const maxDay = new Date(
-          recurringDate.getFullYear(),
-          recurringDate.getMonth() + 1,
-          0
-        ).getDate();
-        if (recurringDate.getDate() > maxDay) {
-          recurringDate.setDate(maxDay);
-        }
+        const recurringDate = addMonthsClamped(baseDate, i);
 
         return {
           amount,
@@ -275,11 +271,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const transactionDate = new Date(date);
-    if (creditMonthOffset > 0) {
-      transactionDate.setMonth(transactionDate.getMonth() + creditMonthOffset);
-      transactionDate.setDate(1);
-    }
+    const transactionDate =
+      creditMonthOffset > 0
+        ? firstOfMonthAfter(baseDate, creditMonthOffset)
+        : baseDate;
 
     const transaction = await prisma.transaction.create({
       data: {
@@ -287,7 +282,7 @@ export async function POST(request: NextRequest) {
         type,
         description,
         date: transactionDate,
-        purchaseDate: creditMonthOffset > 0 ? new Date(date) : null,
+        purchaseDate: creditMonthOffset > 0 ? baseDate : null,
         userId: session.user.id,
         categoryId,
         paymentType: paymentType || null,

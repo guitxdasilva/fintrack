@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { isDateOnlyString, parseDateOnly } from "@/lib/dates";
 
 const updateGoalSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").optional(),
   targetAmount: z.number().positive("Valor alvo deve ser positivo").optional(),
   currentAmount: z.number().min(0, "Valor atual não pode ser negativo").optional(),
-  deadline: z.string().nullable().optional(),
+  deadline: z.string().refine(isDateOnlyString, "Data inválida").nullable().optional(),
 });
 
 export async function PUT(
@@ -45,7 +46,7 @@ export async function PUT(
 
     const data: Record<string, unknown> = { ...result.data };
     if (data.deadline !== undefined) {
-      data.deadline = data.deadline ? new Date(data.deadline as string) : null;
+      data.deadline = data.deadline ? parseDateOnly(data.deadline as string) : null;
     }
 
     const updated = await prisma.goal.update({
