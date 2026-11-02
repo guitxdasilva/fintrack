@@ -4,6 +4,14 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getCreditCardMonthOffset } from "@/lib/invoice";
 import { firstOfMonthAfter, isDateOnlyString, parseDateOnly } from "@/lib/dates";
+import {
+  SERIES_SCOPES,
+  hasInstallmentSuffix,
+  seriesWhere,
+  stripInstallmentSuffix,
+  withInstallmentSuffix,
+  type SeriesScope,
+} from "@/lib/transactions/series";
 
 const updateTransactionSchema = z.object({
   amount: z.number().positive("Valor deve ser positivo").optional(),
@@ -16,6 +24,8 @@ const updateTransactionSchema = z.object({
   cardId: z.string().nullable().optional(),
   cardType: z.enum(["CREDIT", "DEBIT"]).nullable().optional(),
   isFixed: z.boolean().optional(),
+  /** For installments/fixed series: which members to update. Dates only change with "this". */
+  scope: z.enum(SERIES_SCOPES).optional().default("this"),
 });
 
 export async function PUT(
@@ -64,20 +74,22 @@ export async function PUT(
       }
     }
 
+    const scope: SeriesScope = existing.installmentGroupId ? result.data.scope : "this";
+
     const data: Record<string, unknown> = {};
     if (result.data.amount !== undefined) data.amount = result.data.amount;
     if (result.data.type !== undefined) data.type = result.data.type;
     if (result.data.description !== undefined)
       data.description = result.data.description;
 
-    if (result.data.purchaseDate !== undefined) {
+    if (result.data.purchaseDate !== undefined && scope === "this") {
       data.purchaseDate = result.data.purchaseDate ? parseDateOnly(result.data.purchaseDate) : null;
     }
 
     const effectiveCardType = result.data.cardType !== undefined ? result.data.cardType : existing.cardType;
     const effectiveCardId = result.data.cardId !== undefined ? result.data.cardId : existing.cardId;
 
-    if (result.data.date !== undefined) {
+    if (result.data.date !== undefined && scope === "this") {
       const newDate = parseDateOnly(result.data.date);
 
       if (effectiveCardType === "CREDIT" && effectiveCardId) {
@@ -129,13 +141,54 @@ export async function PUT(
       data.isFixed = result.data.isFixed;
     }
 
-    const transaction = await prisma.transaction.update({
+    if (scope === "this") {
+      const transaction = await prisma.transaction.update({
+        where: { id },
+        data,
+        include: { category: true, card: true },
+      });
+
+      return NextResponse.json({ data: transaction, count: 1 });
+    }
+
+    // Series update: shared fields go to every member; the description keeps
+    // each member's own "(n/total)" suffix when the series uses one.
+    const { description, ...shared } = data;
+    const members = await prisma.transaction.findMany({
+      where: seriesWhere(existing, scope),
+      select: { id: true, currentInstallment: true, installments: true },
+    });
+    const usesSuffix = hasInstallmentSuffix(
+      existing.description,
+      existing.currentInstallment,
+      existing.installments
+    );
+    const baseDescription =
+      typeof description === "string" ? stripInstallmentSuffix(description) : undefined;
+
+    await prisma.$transaction(
+      members.map((m) =>
+        prisma.transaction.update({
+          where: { id: m.id },
+          data: {
+            ...shared,
+            ...(baseDescription !== undefined && {
+              description:
+                usesSuffix && m.currentInstallment && m.installments
+                  ? withInstallmentSuffix(baseDescription, m.currentInstallment, m.installments)
+                  : baseDescription,
+            }),
+          },
+        })
+      )
+    );
+
+    const transaction = await prisma.transaction.findUnique({
       where: { id },
-      data,
       include: { category: true, card: true },
     });
 
-    return NextResponse.json({ data: transaction });
+    return NextResponse.json({ data: transaction, count: members.length });
   } catch {
     return NextResponse.json(
       { error: "Erro ao atualizar transação" },
@@ -145,7 +198,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -167,9 +220,22 @@ export async function DELETE(
       );
     }
 
-    await prisma.transaction.delete({ where: { id } });
+    const scopeParam = new URL(request.url).searchParams.get("scope");
+    const scope: SeriesScope = SERIES_SCOPES.includes(scopeParam as SeriesScope)
+      ? (scopeParam as SeriesScope)
+      : "this";
 
-    return NextResponse.json({ message: "Transação excluída com sucesso" });
+    const deleted = await prisma.transaction.deleteMany({
+      where: seriesWhere(existing, scope),
+    });
+
+    return NextResponse.json({
+      message:
+        deleted.count > 1
+          ? `${deleted.count} transações excluídas com sucesso`
+          : "Transação excluída com sucesso",
+      count: deleted.count,
+    });
   } catch {
     return NextResponse.json(
       { error: "Erro ao excluir transação" },

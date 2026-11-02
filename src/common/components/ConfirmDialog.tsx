@@ -16,6 +16,8 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   loading?: boolean;
   onConfirm: () => void;
+  /** Extra content between the description and the buttons. */
+  children?: ReactNode;
 }
 
 /** Destructive confirmation ("Excluir ...?") with Cancel / Confirm buttons. */
@@ -27,6 +29,7 @@ export function ConfirmDialog({
   confirmLabel,
   loading,
   onConfirm,
+  children,
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -35,6 +38,7 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="break-words">{description}</DialogDescription>
         </DialogHeader>
+        {children}
         <div className="flex gap-3 pt-2">
           <Button
             variant="outline"

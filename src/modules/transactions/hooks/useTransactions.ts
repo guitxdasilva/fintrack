@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api-client";
 import { invalidateFinancialData, queryKeys } from "@/lib/query-keys";
+import type { SeriesScope } from "@/lib/transactions/series";
 import type { PaginationData, Transaction } from "@/types";
 
 interface TransactionListResponse {
@@ -31,9 +32,23 @@ export function useSaveTransaction() {
 
   return useMutation({
     mutationFn: ({ id, payload }: { id?: string; payload: Record<string, unknown> }) =>
-      apiFetch<{ data?: Transaction; message?: string }>(
+      apiFetch<{ data?: Transaction; message?: string; count?: number }>(
         id ? `/api/transactions/${id}` : "/api/transactions",
         { method: id ? "PUT" : "POST", body: payload }
+      ),
+    onSuccess: () => invalidateFinancialData(queryClient),
+  });
+}
+
+/** Deletes one transaction, or part of its series (see lib/transactions/series). */
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, scope = "this" }: { id: string; scope?: SeriesScope }) =>
+      apiFetch<{ message: string; count: number }>(
+        `/api/transactions/${id}?scope=${scope}`,
+        { method: "DELETE" }
       ),
     onSuccess: () => invalidateFinancialData(queryClient),
   });

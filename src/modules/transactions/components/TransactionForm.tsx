@@ -6,6 +6,8 @@ import { errorMessage } from "@/lib/api-client";
 import { useCards } from "@/modules/cards/hooks/useCards";
 import { useCategories } from "@/modules/categories/hooks/useCategories";
 import { useSaveTransaction } from "@/modules/transactions/hooks/useTransactions";
+import type { SeriesScope } from "@/lib/transactions/series";
+import { SeriesScopePicker, isSeries } from "./SeriesScopePicker";
 import { CalendarIcon, Pin, ShoppingBag, Repeat } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -91,6 +93,8 @@ function TransactionFormContent({
       ? new Date(transaction.purchaseDate ?? transaction.date)
       : new Date()
   );
+  const [scope, setScope] = useState<SeriesScope>("this");
+  const editingSeries = !!transaction && isSeries(transaction);
   const { data: categories = [], isError: categoriesError } = useCategories(type);
   const { data: cards = [] } = useCards();
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -141,16 +145,20 @@ function TransactionFormContent({
         ...(type === "EXPENSE" && isFixed && fixedMonths && parseInt(fixedMonths) >= 2 && !isEditing
           ? { fixedMonths: parseInt(fixedMonths) }
           : {}),
+        ...(editingSeries ? { scope } : {}),
       };
 
-      await saveTransaction.mutateAsync({
+      const res = await saveTransaction.mutateAsync({
         id: isEditing ? transaction.id : undefined,
         payload,
       });
+      const updatedCount = res.count ?? 1;
 
       toast.success(
         isEditing
-          ? "Transação atualizada com sucesso"
+          ? updatedCount > 1
+            ? `${updatedCount} transações atualizadas com sucesso`
+            : "Transação atualizada com sucesso"
           : type === "EXPENSE" && isInstallment
             ? `Despesa parcelada em ${installments}x criada com sucesso`
             : type === "EXPENSE" && isFixed && fixedMonths && parseInt(fixedMonths) >= 2
@@ -471,6 +479,15 @@ function TransactionFormContent({
             </div>
           )}
 
+          {editingSeries && transaction && (
+            <SeriesScopePicker
+              transaction={transaction}
+              value={scope}
+              onChange={setScope}
+              label="Aplicar alterações em"
+            />
+          )}
+
           <div className="space-y-2">
             <Label>
               {type === "EXPENSE" && isFixed
@@ -483,6 +500,7 @@ function TransactionFormContent({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
+                  disabled={scope !== "this"}
                   className={cn(
                     "w-full justify-start text-left font-normal",
                     !date && "text-muted-foreground"
@@ -504,6 +522,11 @@ function TransactionFormContent({
                 />
               </PopoverContent>
             </Popover>
+            {scope !== "this" && (
+              <p className="text-xs text-muted-foreground">
+                A data só pode ser alterada em &quot;Só esta&quot;. As datas da série são mantidas.
+              </p>
+            )}
           </div>
           </div>
 

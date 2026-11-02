@@ -11,10 +11,13 @@ import { SelectionBar } from "@/common/components/SelectionBar";
 import { useSelection } from "@/common/hooks/useSelection";
 import { errorMessage } from "@/lib/api-client";
 import { truncateText } from "@/lib/utils";
+import type { SeriesScope } from "@/lib/transactions/series";
 import {
+  useDeleteTransaction,
   useDeleteTransactions,
   useSetTransactionsPaid,
 } from "@/modules/transactions/hooks/useTransactions";
+import { SeriesScopePicker, isSeries } from "./SeriesScopePicker";
 import type { Transaction } from "@/types";
 import type { SortState } from "./transaction-list/SortableHead";
 import { TransactionCards } from "./transaction-list/TransactionCards";
@@ -35,11 +38,18 @@ export function TransactionList({
   ...sort
 }: TransactionListProps) {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
+  const [deleteScope, setDeleteScope] = useState<SeriesScope>("this");
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const selection = useSelection();
   const setPaid = useSetTransactionsPaid();
   const deleteTransactions = useDeleteTransactions();
+  const deleteTransaction = useDeleteTransaction();
   const busy = setPaid.isPending || deleteTransactions.isPending;
+
+  function askDelete(transaction: Transaction) {
+    setDeleteScope("this");
+    setDeleteTarget(transaction);
+  }
 
   const selectedExpenses = transactions.filter(
     (t) => selection.selected.has(t.id) && t.type === "EXPENSE"
@@ -80,8 +90,8 @@ export function TransactionList({
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
     try {
-      await deleteTransactions.mutateAsync([deleteTarget.id]);
-      toast.success("Transação excluída com sucesso");
+      const res = await deleteTransaction.mutateAsync({ id: deleteTarget.id, scope: deleteScope });
+      toast.success(res.message);
       setDeleteTarget(null);
     } catch (error) {
       toast.error(errorMessage(error, "Erro ao excluir transação"));
@@ -147,7 +157,7 @@ export function TransactionList({
           onToggle={selection.toggle}
           onToggleAll={toggleSelectAll}
           onEdit={onEdit}
-          onDelete={setDeleteTarget}
+          onDelete={askDelete}
           {...sort}
         />
         {selectionBar(false)}
@@ -159,7 +169,7 @@ export function TransactionList({
           selected={selection.selected}
           onToggle={selection.toggle}
           onEdit={onEdit}
-          onDelete={setDeleteTarget}
+          onDelete={askDelete}
         />
         {selectionBar(true)}
       </div>
@@ -178,9 +188,18 @@ export function TransactionList({
           </>
         }
         confirmLabel="Excluir"
-        loading={deleteTransactions.isPending}
+        loading={deleteTransaction.isPending}
         onConfirm={handleConfirmDelete}
-      />
+      >
+        {isSeries(deleteTarget) && deleteTarget && (
+          <SeriesScopePicker
+            transaction={deleteTarget}
+            value={deleteScope}
+            onChange={setDeleteScope}
+            label="Excluir"
+          />
+        )}
+      </ConfirmDialog>
 
       <ConfirmDialog
         open={showBulkDeleteDialog}
