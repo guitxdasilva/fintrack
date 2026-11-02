@@ -2,16 +2,42 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/resend";
 import { ResetPasswordEmail } from "@/lib/emails/reset-password";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { hashToken } from "@/lib/tokens";
 import crypto from "crypto";
+import { z } from "zod";
+
+const forgotSchema = z.object({
+  email: z.string().min(1, "Email é obrigatório").email("Email inválido"),
+});
+
+const SUCCESS_MESSAGE =
+  "Se o email existir, você receberá um link para redefinir sua senha.";
 
 export async function POST(request: Request) {
   try {
-    const { email } = await request.json();
+    const body = await request.json();
+    const result = forgotSchema.safeParse(body);
 
-    if (!email) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Email é obrigatório" },
+        { error: result.error.issues[0].message },
         { status: 400 }
+      );
+    }
+
+    const { email } = result.data;
+
+    const ip = getClientIp(request.headers);
+    const byIp = rateLimit(`forgot:ip:${ip}`, 10, 60 * 60 * 1000);
+    const byEmail = rateLimit(`forgot:email:${email.toLowerCase()}`, 3, 60 * 60 * 1000);
+    if (!byIp.success || !byEmail.success) {
+      return NextResponse.json(
+        { error: "Muitas solicitações. Tente novamente mais tarde." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(Math.max(byIp.retryAfter, byEmail.retryAfter)) },
+        }
       );
     }
 
@@ -21,9 +47,7 @@ export async function POST(request: Request) {
 
     // Always return success to prevent email enumeration
     if (!user) {
-      return NextResponse.json({
-        message: "Se o email existir, você receberá um link para redefinir sua senha.",
-      });
+      return NextResponse.json({ message: SUCCESS_MESSAGE });
     }
 
     // Delete any existing tokens for this user
@@ -31,13 +55,13 @@ export async function POST(request: Request) {
       where: { userId: user.id },
     });
 
-    // Generate a secure token
+    // Generate a secure token; only its hash is stored
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
     await prisma.passwordResetToken.create({
       data: {
-        token,
+        token: hashToken(token),
         email: user.email,
         userId: user.id,
         expiresAt,
@@ -56,9 +80,7 @@ export async function POST(request: Request) {
       }),
     });
 
-    return NextResponse.json({
-      message: "Se o email existir, você receberá um link para redefinir sua senha.",
-    });
+    return NextResponse.json({ message: SUCCESS_MESSAGE });
   } catch (error) {
     console.error("Error requesting password reset:", error);
     return NextResponse.json(

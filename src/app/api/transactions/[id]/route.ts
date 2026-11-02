@@ -50,6 +50,19 @@ export async function PUT(
       );
     }
 
+    if (result.data.cardId) {
+      const card = await prisma.card.findFirst({
+        where: { id: result.data.cardId, userId: session.user.id },
+        select: { id: true },
+      });
+      if (!card) {
+        return NextResponse.json(
+          { error: "Cartão não encontrado" },
+          { status: 404 }
+        );
+      }
+    }
+
     const data: Record<string, unknown> = {};
     if (result.data.amount !== undefined) data.amount = result.data.amount;
     if (result.data.type !== undefined) data.type = result.data.type;

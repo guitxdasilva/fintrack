@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { isProtectedPath } from "./routes";
 
 /**
  * Edge-safe Auth.js config (no Prisma / Node.js imports).
@@ -15,17 +16,8 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const protectedPrefixes = [
-        "/dashboard",
-        "/transactions",
-        "/categories",
-        "/goals",
-      ];
-      const isProtected = protectedPrefixes.some((p) =>
-        nextUrl.pathname.startsWith(p),
-      );
 
-      if (isProtected && !isLoggedIn) {
+      if (isProtectedPath(nextUrl.pathname) && !isLoggedIn) {
         return false; // → redirect to pages.signIn
       }
 

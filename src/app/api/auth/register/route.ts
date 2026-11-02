@@ -1,17 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
 });
 
 export async function POST(request: Request) {
   try {
+    const { success, retryAfter } = rateLimit(
+      `register:${getClientIp(request.headers)}`,
+      5,
+      60 * 60 * 1000
+    );
+    if (!success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente mais tarde." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
     const body = await request.json();
     const { name, email, password } = registerSchema.parse(body);
 

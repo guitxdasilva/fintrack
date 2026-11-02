@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { hashToken } from "@/lib/tokens";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 const resetSchema = z.object({
   token: z.string().min(1, "Token é obrigatório"),
-  password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+  password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
 });
 
 export async function POST(request: Request) {
@@ -23,8 +24,7 @@ export async function POST(request: Request) {
     const { token, password } = result.data;
 
     const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
-      include: { user: true },
+      where: { token: hashToken(token) },
     });
 
     if (!resetToken) {

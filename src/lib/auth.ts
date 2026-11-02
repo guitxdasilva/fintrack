@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { authConfig } from "./auth.config";
+import { getClientIp, rateLimit } from "./rate-limit";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
@@ -12,8 +13,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const ip = getClientIp(request.headers);
+        const email = String(credentials.email).toLowerCase();
+        const { success } = rateLimit(`login:${ip}:${email}`, 5, 15 * 60 * 1000);
+        if (!success) {
           return null;
         }
 

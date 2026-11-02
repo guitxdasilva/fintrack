@@ -7,12 +7,18 @@ import { authConfig } from "./lib/auth.config";
  */
 export default NextAuth(authConfig).auth;
 
+/**
+ * Next.js requires a static matcher, so it must mirror PROTECTED_PREFIXES
+ * in lib/routes.ts. The `authorized` callback is the real gate.
+ */
 export const config = {
   matcher: [
     "/dashboard/:path*",
     "/transactions/:path*",
     "/categories/:path*",
     "/cards/:path*",
+    "/budget/:path*",
     "/goals/:path*",
+    "/settings/:path*",
   ],
 };

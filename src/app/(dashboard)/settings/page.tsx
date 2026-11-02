@@ -53,6 +53,7 @@ export default function SettingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
 
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -152,6 +153,8 @@ export default function SettingsPage() {
     try {
       const res = await fetch("/api/auth/profile", {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: deletePassword }),
       });
 
       if (!res.ok) {
@@ -391,19 +394,32 @@ export default function SettingsPage() {
                       placeholder="EXCLUIR"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Senha atual</label>
+                    <Input
+                      type="password"
+                      autoComplete="current-password"
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      placeholder="Digite sua senha"
+                    />
+                  </div>
                   <div className="flex justify-end gap-3">
                     <Button
                       variant="outline"
                       onClick={() => {
                         setDeleteDialogOpen(false);
                         setDeleteConfirm("");
+                        setDeletePassword("");
                       }}
                     >
                       Cancelar
                     </Button>
                     <Button
                       variant="destructive"
-                      disabled={deleteConfirm !== "EXCLUIR" || deleteLoading}
+                      disabled={
+                        deleteConfirm !== "EXCLUIR" || !deletePassword || deleteLoading
+                      }
                       onClick={handleDeleteAccount}
                     >
                       {deleteLoading && (

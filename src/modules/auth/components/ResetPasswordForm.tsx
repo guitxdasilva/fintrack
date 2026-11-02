@@ -22,7 +22,7 @@ const resetSchema = z
     password: z
       .string()
       .min(1, "Senha é obrigatória")
-      .min(6, "Senha deve ter pelo menos 6 caracteres"),
+      .min(8, "Senha deve ter pelo menos 8 caracteres"),
     confirmPassword: z
       .string()
       .min(1, "Confirmação é obrigatória"),
@@ -169,7 +169,7 @@ export function ResetPasswordForm() {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`pr-10 ${fieldErrors.password ? "border-destructive" : ""}`}

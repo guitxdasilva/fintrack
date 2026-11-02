@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
+import { rateLimit } from "@/lib/rate-limit";
+
+const deleteAccountSchema = z.object({
+  password: z.string().min(1, "Senha é obrigatória"),
+});
 
 const updateProfileSchema = z.object({
   name: z
@@ -104,12 +110,43 @@ export async function PUT(req: Request) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
   try {
     const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const result = deleteAccountSchema.safeParse(body);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+
+    const { success, retryAfter } = rateLimit(
+      `delete-account:${session.user.id}`,
+      5,
+      15 * 60 * 1000
+    );
+    if (!success) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente mais tarde." },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { password: true },
+    });
+
+    if (!user || !(await bcrypt.compare(result.data.password, user.password))) {
+      return NextResponse.json({ error: "Senha incorreta" }, { status: 403 });
     }
 
     await prisma.user.delete({
