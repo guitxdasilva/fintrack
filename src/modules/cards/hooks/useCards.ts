@@ -82,3 +82,25 @@ export function useDeleteCard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.cards }),
   });
 }
+
+/** A refund on a card not tied to a purchase, credited to the given invoice. */
+export function useCardRefund() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      cardId,
+      ...body
+    }: {
+      cardId: string;
+      amount: number;
+      categoryId: string;
+      month: number;
+      year: number;
+      description?: string;
+      date?: string;
+    }) =>
+      apiFetch<{ message: string }>(`/api/cards/${cardId}/refund`, { method: "POST", body }),
+    onSuccess: () => invalidateFinancialData(queryClient),
+  });
+}

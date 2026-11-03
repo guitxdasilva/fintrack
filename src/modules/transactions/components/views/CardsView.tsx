@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarRange, CheckCircle2, CreditCard, LayoutGrid, Loader2, Plus } from "lucide-react";
+import { CalendarRange, CheckCircle2, CreditCard, LayoutGrid, Loader2, Plus, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import { Badge } from "@/common/components/ui/badge";
@@ -13,7 +13,8 @@ import { errorMessage } from "@/lib/api-client";
 import { cn, formatCurrency } from "@/lib/utils";
 import { useCardInvoice, useCards, usePayInvoice } from "@/modules/cards/hooks/useCards";
 import type { Card, Transaction } from "@/types";
-import { groupByDay, summarize } from "../../lib/statement";
+import { groupByDay, summarize, withoutLinkedRefunds } from "../../lib/statement";
+import { CardRefundDialog } from "../statement/CardRefundDialog";
 import { StatementView } from "../statement/StatementView";
 import { SummaryStrip } from "../statement/SummaryStrip";
 import type { TransactionDefaults } from "../TransactionForm";
@@ -38,7 +39,7 @@ function useCardInvoiceState(card: Card, month: MonthValue) {
 
   const transactions = useMemo(() => invoice?.transactions ?? [], [invoice]);
   const groups = useMemo(
-    () => groupByDay(transactions, today, (t) => t.purchaseDate ?? t.date),
+    () => groupByDay(withoutLinkedRefunds(transactions), today, (t) => t.purchaseDate ?? t.date),
     [transactions, today]
   );
   const summary = summarize(transactions);
@@ -128,9 +129,25 @@ function NewPurchaseButton({
   );
 }
 
+function RefundButton({ card, onClick, compact }: { card: Card; onClick: () => void; compact?: boolean }) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="gap-1.5"
+      onClick={onClick}
+      aria-label={`Reembolso no ${card.name}`}
+    >
+      <Undo2 className="h-3.5 w-3.5" />
+      {compact ? "Reembolso" : "Adicionar reembolso"}
+    </Button>
+  );
+}
+
 /** Column of the side-by-side overview. */
 function CardColumn({ card, month, onEdit, onNew }: CardPanelProps) {
   const state = useCardInvoiceState(card, month);
+  const [refundOpen, setRefundOpen] = useState(false);
 
   return (
     <section
@@ -149,23 +166,34 @@ function CardColumn({ card, month, onEdit, onNew }: CardPanelProps) {
             </p>
           </div>
           <div className="text-right">
-            <p className="text-lg font-bold tabular-nums">{formatCurrency(state.total)}</p>
+            <p className="text-lg font-bold tabular-nums" data-testid="invoice-total">
+              {formatCurrency(state.total)}
+            </p>
             <p className="text-xs text-muted-foreground tabular-nums">
               {state.summary.pending > 0
                 ? `${formatCurrency(state.summary.pending)} pendente`
                 : state.total > 0
                   ? "Paga"
-                  : "Sem compras"}
+                  : state.total < 0
+                    ? "Saldo a favor"
+                    : "Sem compras"}
             </p>
+            {state.summary.refunds > 0 && (
+              <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+                {formatCurrency(state.summary.refunds)} reembolsado
+              </p>
+            )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {state.summary.pending > 0 && (
             <PayButton card={card} onPay={state.pay} paying={state.paying} compact />
           )}
           <NewPurchaseButton card={card} onNew={onNew} compact />
+          <RefundButton card={card} onClick={() => setRefundOpen(true)} compact />
         </div>
       </header>
+      <CardRefundDialog card={refundOpen ? card : null} month={month} onClose={() => setRefundOpen(false)} />
       <div className="max-h-[520px] flex-1 overflow-y-auto">
         <StatementView
           groups={state.groups}
@@ -187,6 +215,7 @@ function CardColumn({ card, month, onEdit, onNew }: CardPanelProps) {
 /** One card in detail (when picked from the chips). */
 function CardDetail({ card, month, onEdit, onNew }: CardPanelProps) {
   const state = useCardInvoiceState(card, month);
+  const [refundOpen, setRefundOpen] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -209,15 +238,17 @@ function CardDetail({ card, month, onEdit, onNew }: CardPanelProps) {
             <PayButton card={card} onPay={state.pay} paying={state.paying} />
           )}
           <NewPurchaseButton card={card} onNew={onNew} />
+          <RefundButton card={card} onClick={() => setRefundOpen(true)} />
         </div>
       </div>
+      <CardRefundDialog card={refundOpen ? card : null} month={month} onClose={() => setRefundOpen(false)} />
 
       <SummaryStrip
         items={[
           { label: "Total da fatura", value: state.total },
           { label: "Pago", value: state.summary.paid, tone: "muted" },
           { label: "Pendente", value: state.summary.pending, tone: "muted" },
-          { label: "Estornos/créditos", value: state.summary.income, tone: "income" },
+          { label: "Reembolsos", value: state.summary.refunds, tone: "income" },
         ]}
       />
 

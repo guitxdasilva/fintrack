@@ -15,6 +15,7 @@ export interface RecurrenceCandidate {
   isFixed: boolean;
   installmentGroupId: string | null;
   categoryId: string;
+  isRefund?: boolean;
 }
 
 export interface RecurringSuggestion {
@@ -79,7 +80,7 @@ export const detectRecurringHeuristic: RecurrenceDetector = (transactions, today
 
   const groups = new Map<string, RecurrenceCandidate[]>();
   for (const t of transactions) {
-    if (t.isFixed || t.installmentGroupId) continue;
+    if (t.isFixed || t.installmentGroupId || t.isRefund) continue;
     if (INSTALLMENT_TEXT.test(t.description)) continue;
     const idx = monthIndex(t.date);
     if (idx < oldestIdx || idx > currentIdx) continue;

@@ -154,3 +154,20 @@ describe("buildProjection with an opening balance", () => {
     expect(months[0].balance).toBe(2400);
   });
 });
+
+describe("buildProjection with refunds", () => {
+  it("counts a refund as less spending, not as income", () => {
+    const { months } = buildProjection(
+      [
+        tx(10, 2026, 300, "EXPENSE"),
+        { ...tx(10, 2026, 100, "INCOME"), isRefund: true },
+      ],
+      START,
+      2,
+      true
+    );
+    expect(months[0].income.committed).toBe(0);
+    expect(months[0].expense.variable).toBe(200);
+    expect(months[0].net).toBe(-200);
+  });
+});

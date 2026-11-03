@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getInvoicePeriod } from "@/lib/invoice";
 import { monthRange } from "@/lib/dates";
-import { sumMoney } from "@/lib/money";
+import { totalSpending } from "@/lib/refunds";
 
 export async function GET(
   req: NextRequest,
@@ -60,14 +60,15 @@ export async function GET(
         cardId: id,
         date: { gte: start, lte: end },
       },
-      include: { category: true },
+      include: {
+        category: true,
+        refunds: { select: { id: true, amount: true, purchaseDate: true } },
+      },
       orderBy: { date: "desc" },
     });
 
-    const total = sumMoney(
-      transactions.filter((t) => t.type === "EXPENSE"),
-      (t) => t.amount
-    );
+    // Purchases minus refunds credited to this invoice
+    const total = totalSpending(transactions);
 
     const formatDate = (d: Date) =>
       `${d.getUTCDate().toString().padStart(2, "0")}/${(d.getUTCMonth() + 1)

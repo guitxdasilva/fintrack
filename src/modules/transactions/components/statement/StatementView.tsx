@@ -19,6 +19,7 @@ import {
 import type { Transaction } from "@/types";
 import type { StatementGroup } from "../../lib/statement";
 import { SeriesScopePicker, isSeries } from "../SeriesScopePicker";
+import { RefundDialog } from "./RefundDialog";
 import { StatementRow } from "./StatementRow";
 
 interface StatementViewProps {
@@ -49,6 +50,7 @@ export function StatementView({
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleteScope, setDeleteScope] = useState<SeriesScope>("this");
   const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [refundTarget, setRefundTarget] = useState<Transaction | null>(null);
   const selection = useSelection();
   const setPaid = useSetTransactionsPaid();
   const deleteOne = useDeleteTransaction();
@@ -155,6 +157,7 @@ export function StatementView({
                     setDeleteScope("this");
                     setDeleteTarget(target);
                   }}
+                  onRefund={setRefundTarget}
                   hideCard={hideCard}
                   compact={compact}
                 />
@@ -216,6 +219,8 @@ export function StatementView({
           />
         )}
       </ConfirmDialog>
+
+      <RefundDialog purchase={refundTarget} onClose={() => setRefundTarget(null)} />
 
       <ConfirmDialog
         open={showBulkDelete}

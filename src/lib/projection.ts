@@ -23,6 +23,8 @@ export interface ProjectionTransaction {
   date: Date;
   isFixed: boolean;
   installmentGroupId: string | null;
+  /** Refunds reduce variable spending; they are not income. */
+  isRefund?: boolean;
 }
 
 export interface ProjectionMonth {
@@ -91,7 +93,9 @@ export function buildProjection(
     if (opening && t.date < opening.since) {
       bucket.beforeSince += t.type === "INCOME" ? t.amount : -t.amount;
     }
-    if (t.type === "INCOME") {
+    if (t.isRefund) {
+      bucket.expense.variable -= t.amount;
+    } else if (t.type === "INCOME") {
       bucket.income.committed += t.amount;
       if (!t.isFixed) bucket.income.variable += t.amount;
     } else {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Category, Transaction } from "@/types";
-import { groupByCategory, groupByDay, summarize } from "../statement";
+import { groupByCategory, groupByDay, summarize, withoutLinkedRefunds } from "../statement";
 
 const food = { id: "food", name: "Alimentação", icon: "🍔" } as Category;
 const home = { id: "home", name: "Moradia", icon: "🏠" } as Category;
@@ -84,6 +84,42 @@ describe("summarize", () => {
         tx("2026-11-01", 40),
         tx("2026-11-01", 1000, { type: "INCOME" }),
       ])
-    ).toEqual({ income: 1000, expense: 140, paid: 100, pending: 40 });
+    ).toEqual({ income: 1000, expense: 140, refunds: 0, paid: 100, pending: 40 });
+  });
+
+  it("nets refunds from spending and keeps them out of income", () => {
+    expect(
+      summarize([
+        tx("2026-11-01", 100),
+        tx("2026-11-01", 30, { type: "INCOME", isRefund: true }),
+        tx("2026-11-01", 500, { type: "INCOME" }),
+      ])
+    ).toEqual({ income: 500, expense: 70, refunds: 30, paid: 0, pending: 100 });
+  });
+});
+
+describe("refunds in the statement", () => {
+  const purchase = tx("2026-11-01", 100, {
+    id: "p1",
+    refunds: [{ id: "r1", amount: 40, purchaseDate: null }],
+  });
+  const linked = tx("2026-11-01", 40, { id: "r1", type: "INCOME", isRefund: true, refundOfId: "p1" });
+  const orphan = tx("2026-11-01", 15, { type: "INCOME", isRefund: true, refundOfId: "elsewhere" });
+
+  it("hides refunds shown on their purchase, keeps the others", () => {
+    expect(withoutLinkedRefunds([purchase, linked, orphan]).map((t) => t.id)).toEqual([
+      "p1",
+      orphan.id,
+    ]);
+  });
+
+  it("leaves refunded amounts out of paid and pending", () => {
+    const summary = summarize([purchase, linked, tx("2026-11-02", 20, { paid: true })]);
+    expect(summary).toMatchObject({ expense: 80, refunds: 40, pending: 60, paid: 20 });
+  });
+
+  it("nets a purchase's refunds into the day total", () => {
+    const [day] = groupByDay(withoutLinkedRefunds([purchase, linked]), TODAY);
+    expect(day.total).toBe(-60);
   });
 });

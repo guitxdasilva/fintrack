@@ -49,6 +49,10 @@ export interface Transaction {
   paidAt?: string | null;
   isFixed?: boolean;
   purchaseDate?: string | null;
+  isRefund?: boolean;
+  refundOfId?: string | null;
+  /** Refunds of this purchase (amount, and when they happened). */
+  refunds?: { id: string; amount: number; purchaseDate: string | null }[];
 }
 
 export interface CreateTransactionDTO {

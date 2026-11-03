@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         date: true,
         isFixed: true,
         installmentGroupId: true,
+        isRefund: true,
       },
     });
 

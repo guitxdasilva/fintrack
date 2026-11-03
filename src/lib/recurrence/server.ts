@@ -36,6 +36,7 @@ export async function findRecurringSuggestions(userId: string, today: Date) {
         isFixed: true,
         installmentGroupId: true,
         categoryId: true,
+        isRefund: true,
       },
     }),
     prisma.transaction.findMany({

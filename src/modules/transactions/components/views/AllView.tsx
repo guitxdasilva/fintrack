@@ -6,7 +6,7 @@ import { EmptyState } from "@/common/components/ui/empty-state";
 import type { MonthValue } from "@/common/components/MonthNavigator";
 import { useTransactions } from "@/modules/transactions/hooks/useTransactions";
 import type { Transaction } from "@/types";
-import { groupByDay, summarize } from "../../lib/statement";
+import { groupByDay, summarize, withoutLinkedRefunds } from "../../lib/statement";
 import { StatementView } from "../statement/StatementView";
 import { SummaryStrip } from "../statement/SummaryStrip";
 import { TransactionFilters, type FilterValues } from "../TransactionFilters";
@@ -54,7 +54,10 @@ export function AllView({ month, onEdit, onFiltersChange }: AllViewProps) {
     sortOrder: "desc",
   });
   const transactions = useMemo(() => data?.data ?? [], [data]);
-  const groups = useMemo(() => groupByDay(transactions, today), [transactions, today]);
+  const groups = useMemo(
+    () => groupByDay(withoutLinkedRefunds(transactions), today),
+    [transactions, today]
+  );
   const summary = summarize(transactions);
   const total = data?.pagination.total ?? 0;
 

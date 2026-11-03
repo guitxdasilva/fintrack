@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Check, CheckCircle2, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Check, CheckCircle2, MoreVertical, Pencil, Trash2, Undo2 } from "lucide-react";
 import { Button } from "@/common/components/ui/button";
 import {
   DropdownMenu,
@@ -12,6 +12,7 @@ import {
 import { cn, formatCurrency, truncateText } from "@/lib/utils";
 import type { PaymentType, Transaction } from "@/types";
 import { PAYMENT_TYPE_LABELS } from "@/types";
+import { refundedOf } from "../../lib/statement";
 import { FixedBadge } from "./FixedBadge";
 
 interface StatementRowProps {
@@ -23,14 +24,18 @@ interface StatementRowProps {
   onEdit: (t: Transaction) => void;
   onTogglePaid: (t: Transaction) => void;
   onDelete: (t: Transaction) => void;
+  /** Offered on card purchases that still have something to refund. */
+  onRefund?: (t: Transaction) => void;
   /** Hide the card name (inside a card's own invoice). */
   hideCard?: boolean;
   /** Tighter layout for narrow columns. */
   compact?: boolean;
 }
 
+const dayMonth = (iso: string) => format(new Date(iso), "dd/MM", { locale: ptBR });
+
 function details(t: Transaction, hideCard: boolean): string[] {
-  const parts = [t.category?.name ?? "Sem categoria"];
+  const parts = t.isRefund ? ["Reembolso", t.category?.name ?? "Sem categoria"] : [t.category?.name ?? "Sem categoria"];
   if (t.paymentType === "CARD") {
     if (!hideCard && t.card) parts.push(t.card.name);
     if (t.cardType) parts.push(t.cardType === "CREDIT" ? "Crédito" : "Débito");
@@ -39,7 +44,7 @@ function details(t: Transaction, hideCard: boolean): string[] {
   }
   if (t.installments && !t.isFixed) parts.push(`${t.currentInstallment}/${t.installments}`);
   if (t.purchaseDate) {
-    parts.push(`Compra ${format(new Date(t.purchaseDate), "dd/MM", { locale: ptBR })}`);
+    parts.push(`${t.isRefund ? "em" : "Compra"} ${dayMonth(t.purchaseDate)}`);
   }
   return parts;
 }
@@ -53,11 +58,15 @@ export function StatementRow({
   onEdit,
   onTogglePaid,
   onDelete,
+  onRefund,
   hideCard = false,
   compact = false,
 }: StatementRowProps) {
   const isExpense = t.type === "EXPENSE";
   const paidMark = isExpense && t.paid;
+  const refunded = refundedOf(t);
+  const fullyRefunded = isExpense && refunded > 0 && refunded >= t.amount;
+  const canRefund = !!onRefund && isExpense && t.paymentType === "CARD" && !fullyRefunded;
 
   const iconTitle =
     iconAction === "paid"
@@ -122,17 +131,22 @@ export function StatementRow({
           <p
             className={cn(
               "text-sm font-semibold tabular-nums",
-              isExpense ? "text-foreground" : "text-emerald-600 dark:text-emerald-400"
+              isExpense ? "text-foreground" : "text-emerald-600 dark:text-emerald-400",
+              fullyRefunded && "text-muted-foreground line-through"
             )}
           >
             {isExpense ? "−" : "+"}
             {formatCurrency(t.amount)}
           </p>
-          {isExpense && (
+          {isExpense && refunded > 0 ? (
+            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+              {fullyRefunded ? "Reembolsado" : `${formatCurrency(refunded)} reembolsado`}
+            </p>
+          ) : isExpense ? (
             <p className={cn("text-xs", t.paid ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
               {t.paid ? "Pago" : "Pendente"}
             </p>
-          )}
+          ) : null}
         </div>
       </button>
 
@@ -156,6 +170,12 @@ export function StatementRow({
             <DropdownMenuItem onClick={() => onTogglePaid(t)}>
               <CheckCircle2 className="mr-2 h-4 w-4" />
               {t.paid ? "Desmarcar pago" : "Marcar como pago"}
+            </DropdownMenuItem>
+          )}
+          {canRefund && (
+            <DropdownMenuItem onClick={() => onRefund(t)}>
+              <Undo2 className="mr-2 h-4 w-4" />
+              Reembolsar
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />

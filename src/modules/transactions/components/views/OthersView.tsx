@@ -6,7 +6,7 @@ import { EmptyState } from "@/common/components/ui/empty-state";
 import type { MonthValue } from "@/common/components/MonthNavigator";
 import { useTransactions } from "@/modules/transactions/hooks/useTransactions";
 import type { Transaction } from "@/types";
-import { groupByCategory, summarize } from "../../lib/statement";
+import { groupByCategory, summarize, withoutLinkedRefunds } from "../../lib/statement";
 import { StatementView } from "../statement/StatementView";
 import { SummaryStrip } from "../statement/SummaryStrip";
 
@@ -27,7 +27,10 @@ export function OthersView({ month, onEdit }: OthersViewProps) {
     sortOrder: "desc",
   });
   const transactions = useMemo(() => data?.data ?? [], [data]);
-  const groups = useMemo(() => groupByCategory(transactions), [transactions]);
+  const groups = useMemo(
+    () => groupByCategory(withoutLinkedRefunds(transactions)),
+    [transactions]
+  );
   const summary = summarize(transactions);
 
   return (

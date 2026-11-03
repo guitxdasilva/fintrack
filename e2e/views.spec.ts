@@ -33,7 +33,7 @@ test("cards tab: every card side by side, each with its own new purchase", async
   await dialog.getByRole("button", { name: "Criar" }).click();
   await expectToast(page, "Transação criada com sucesso");
   await expect(cardB.getByText("Livro E2E")).toBeVisible();
-  await expect(cardB).toContainText("R$ 80,00 pendente");
+  await expect(statementRow(page, "Livro E2E")).toContainText("Pendente");
   await expect(cardA.getByText("Livro E2E")).toHaveCount(0);
 
   // Card A closes on day 10: the purchase goes to a later invoice

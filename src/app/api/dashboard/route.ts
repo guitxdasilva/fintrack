@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { monthRange } from "@/lib/dates";
 import { roundMoney, sumMoney } from "@/lib/money";
+import { incomeOf, spendingOf, totalIncome as incomeTotal, totalSpending } from "@/lib/refunds";
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,15 +50,9 @@ export async function GET(request: NextRequest) {
 
     const amount = (t: { amount: number }) => t.amount;
 
-    const totalIncome = sumMoney(
-      selectedMonthTransactions.filter((t) => t.type === "INCOME"),
-      amount
-    );
-
-    const totalExpense = sumMoney(
-      selectedMonthTransactions.filter((t) => t.type === "EXPENSE"),
-      amount
-    );
+    // Refunds reduce expenses instead of counting as income
+    const totalIncome = incomeTotal(selectedMonthTransactions);
+    const totalExpense = totalSpending(selectedMonthTransactions);
 
     const totalPaid = sumMoney(
       selectedMonthTransactions.filter((t) => t.type === "EXPENSE" && t.paid),
@@ -74,22 +69,23 @@ export async function GET(request: NextRequest) {
     const expenseMap = new Map<string, { category: string; color: string; total: number }>();
 
     selectedMonthTransactions
-      .filter((t) => t.type === "EXPENSE")
+      .filter((t) => spendingOf(t) !== 0)
       .forEach((t) => {
         const key = t.category.name;
         const existing = expenseMap.get(key);
         if (existing) {
-          existing.total += t.amount;
+          existing.total += spendingOf(t);
         } else {
           expenseMap.set(key, {
             category: key,
             color: t.category.color,
-            total: t.amount,
+            total: spendingOf(t),
           });
         }
       });
 
     const expensesByCategory = Array.from(expenseMap.values())
+      .filter((item) => roundMoney(item.total) > 0)
       .sort((a, b) => b.total - a.total)
       .map((item) => ({
         ...item,
@@ -114,11 +110,8 @@ export async function GET(request: NextRequest) {
       const key = `${monthNames[d.getUTCMonth()]}/${d.getUTCFullYear().toString().slice(2)}`;
       const entry = monthlyMap.get(key);
       if (entry) {
-        if (t.type === "INCOME") {
-          entry.income += t.amount;
-        } else {
-          entry.expense += t.amount;
-        }
+        entry.income += incomeOf(t);
+        entry.expense += spendingOf(t);
       }
     });
 

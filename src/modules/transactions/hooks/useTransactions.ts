@@ -126,3 +126,17 @@ export function useSetTransactionsPaid() {
     onSettled: () => invalidateFinancialData(queryClient),
   });
 }
+
+/** Refunds a purchase (fully or partially), credited to the purchase's invoice. */
+export function useRefundTransaction() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, amount, date }: { id: string; amount: number; date?: string }) =>
+      apiFetch<{ message: string }>(`/api/transactions/${id}/refund`, {
+        method: "POST",
+        body: { amount, date },
+      }),
+    onSuccess: () => invalidateFinancialData(queryClient),
+  });
+}

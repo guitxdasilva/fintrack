@@ -78,9 +78,18 @@ model Transaction {
   isFixed            Boolean   @default(false)
   purchaseDate       DateTime?
 
+  /// Refunds are INCOME rows that reduce spending (invoice, budget, category
+  /// totals) instead of counting as income. A linked refund points to the
+  /// purchase it refunds and sits in that purchase's invoice.
+  isRefund           Boolean       @default(false)
+  refundOfId         String?
+  refundOf           Transaction?  @relation("Refunds", fields: [refundOfId], references: [id], onDelete: Cascade)
+  refunds            Transaction[] @relation("Refunds")
+
   @@index([userId])
   @@index([date])
   @@index([installmentGroupId])
+  @@index([refundOfId])
 }
 
 model Category {

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { monthRange } from "@/lib/dates";
 import { roundMoney, sumMoney } from "@/lib/money";
+import { spendingOf } from "@/lib/refunds";
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,24 +38,26 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ data: { budgets: [], totalBudget: 0, totalSpent: 0 } });
     }
 
-    // Get all expenses for the month grouped by category
-    const expenses = await prisma.transaction.findMany({
+    // The month's expenses and refunds (refunds reduce what was spent)
+    const movements = await prisma.transaction.findMany({
       where: {
         userId,
-        type: "EXPENSE",
+        OR: [{ type: "EXPENSE" }, { isRefund: true }],
         date: { gte: startOfMonth, lte: endOfMonth },
         categoryId: { in: categories.map((c) => c.id) },
       },
       select: {
         categoryId: true,
         amount: true,
+        type: true,
+        isRefund: true,
       },
     });
 
-    // Sum expenses per category
+    // Sum spending per category
     const spentMap = new Map<string, number>();
-    expenses.forEach((e) => {
-      spentMap.set(e.categoryId, (spentMap.get(e.categoryId) || 0) + e.amount);
+    movements.forEach((e) => {
+      spentMap.set(e.categoryId, (spentMap.get(e.categoryId) || 0) + spendingOf(e));
     });
 
     const budgets = categories.map((cat) => {
