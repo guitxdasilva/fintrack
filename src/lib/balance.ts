@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { roundMoney } from "./money";
+import { startOfNextDay } from "./dates";
 
 /** Income minus expenses of the user's transactions dated in [from, to). */
 export async function netBetween(userId: string, from: Date, to: Date): Promise<number> {
@@ -18,8 +19,16 @@ export async function netBetween(userId: string, from: Date, to: Date): Promise<
 }
 
 /**
+ * The informed balance is the end-of-day balance of its date, so that day's
+ * transactions are already in it: only later days move it.
+ */
+export function balanceCountsFrom(balanceDate: Date): Date {
+  return startOfNextDay(balanceDate);
+}
+
+/**
  * The user's known balance moved to `at`: initial balance plus every
- * transaction from the balance date up to (not including) `at`.
+ * transaction after the balance date up to (not including) `at`.
  * Null when the user never informed a balance.
  */
 export async function balanceAt(userId: string, at: Date) {
@@ -30,10 +39,11 @@ export async function balanceAt(userId: string, at: Date) {
 
   if (!user?.initialBalanceDate) return null;
 
-  const since = user.initialBalanceDate;
+  const countsFrom = balanceCountsFrom(user.initialBalanceDate);
   return {
-    since,
+    since: user.initialBalanceDate,
+    countsFrom,
     initialBalance: user.initialBalance,
-    amount: roundMoney(user.initialBalance + (await netBetween(userId, since, at))),
+    amount: roundMoney(user.initialBalance + (await netBetween(userId, countsFrom, at))),
   };
 }

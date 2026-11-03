@@ -63,7 +63,7 @@ function BalanceForm({ balance }: { balance: BalanceData | null }) {
             </p>
             <p className="text-xs text-muted-foreground">
               {formatCurrency(balance.initialBalance)} em{" "}
-              {formatDate(parseDateOnly(balance.initialBalanceDate))} + transações desde então
+              {formatDate(parseDateOnly(balance.initialBalanceDate))} + transações dos dias seguintes
             </p>
           </div>
         )}
@@ -97,8 +97,8 @@ function BalanceForm({ balance }: { balance: BalanceData | null }) {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Transações a partir dessa data são somadas ao saldo; as anteriores já estão incluídas nele.
-          Use o saldo do fim do dia.
+          Use o saldo do fim desse dia: as transações dele e as anteriores já estão incluídas; só as
+          dos dias seguintes são somadas.
         </p>
 
         <div className="flex justify-end gap-2 pt-2">

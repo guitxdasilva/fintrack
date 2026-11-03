@@ -10,6 +10,7 @@ import { IncomeVsExpense } from "@/modules/dashboard/components/IncomeVsExpense"
 import { MonthTransactions } from "@/modules/dashboard/components/MonthTransactions";
 import { useBalance } from "@/modules/balance/hooks/useBalance";
 import { useDashboard } from "@/modules/dashboard/hooks/useDashboard";
+import { ProjectionPreview } from "@/modules/projection/components/ProjectionPreview";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -107,6 +108,8 @@ export default function DashboardPage() {
         currentBalance={realBalance?.currentBalance ?? null}
         isLoading={isLoading}
       />
+
+      <ProjectionPreview />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <ExpenseChart

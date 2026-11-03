@@ -42,10 +42,13 @@ export async function GET(request: NextRequest) {
     });
 
     // Informed before the window: moved to its start. Informed inside it: used
-    // as is, and the window's transactions dated before it are skipped.
+    // as is, and the window's transactions up to its date are skipped.
     const known = await balanceAt(session.user.id, windowStart);
     const opening = known
-      ? { amount: known.amount, since: known.since > windowStart ? known.since : windowStart }
+      ? {
+          amount: known.amount,
+          since: known.countsFrom > windowStart ? known.countsFrom : windowStart,
+        }
       : undefined;
 
     return NextResponse.json({

@@ -67,6 +67,11 @@ export function monthRange(year: number, month: number): { start: Date; end: Dat
   };
 }
 
+/** 00:00 UTC of the day after the date's calendar day. */
+export function startOfNextDay(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1));
+}
+
 /** Inclusive UTC range from the start of `from`'s day to the end of `to`'s day. */
 export function dayRange(from: Date, to: Date): { start: Date; end: Date } {
   return {

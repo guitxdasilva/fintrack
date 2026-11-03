@@ -26,6 +26,8 @@ test("dashboard shows the month's totals", async ({ page }) => {
 
   await page.goto("/dashboard");
   await expect(page.getByText("Resultado do Mês")).toBeVisible();
+  await expect(page.getByText("Próximos meses")).toBeVisible();
+  await expect(page.getByText("Resultado previsto de cada mês", { exact: false })).toBeVisible();
   await expect(page.getByText("Aluguel E2E")).toBeVisible();
   await expect(page.getByText("R$ 5.000,00").first()).toBeVisible();
 });
@@ -47,9 +49,14 @@ test("starting balance turns into current and projected balance", async ({ page 
   await page.getByRole("button", { name: "Salvar saldo" }).click();
   await expectToast(page, "Saldo atualizado");
   await expect(page.getByText("Saldo hoje")).toBeVisible();
+  // Today's transactions are already part of the informed (end-of-day) balance
+  await expect(page.getByText("R$ 1.000,00").first()).toBeVisible();
 
   await page.goto("/dashboard");
   await expect(page.getByText("Saldo Atual")).toBeVisible();
+  await expect(page.getByText("R$ 1.000,00").first()).toBeVisible();
+  await expect(page.getByText("Saldo previsto no fim de cada mês")).toBeVisible();
+  await expect(page.getByText("· este mês")).toBeVisible();
 
   await page.goto("/projection");
   await expect(page.getByText("Saldo projetado", { exact: true })).toBeVisible();

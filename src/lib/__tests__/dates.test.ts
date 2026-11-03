@@ -9,6 +9,7 @@ import {
   isDateOnlyString,
   monthRange,
   parseDateOnly,
+  startOfNextDay,
 } from "../dates";
 
 const iso = (d: Date) => d.toISOString();
@@ -110,5 +111,18 @@ describe("dayRange", () => {
     const { start, end } = dayRange(parseDateOnly("2026-03-10"), parseDateOnly("2026-03-12"));
     expect(iso(start)).toBe("2026-03-10T00:00:00.000Z");
     expect(iso(end)).toBe("2026-03-12T23:59:59.999Z");
+  });
+});
+
+describe("startOfNextDay", () => {
+  it("is midnight UTC of the following calendar day", () => {
+    expect(iso(startOfNextDay(parseDateOnly("2026-11-02")))).toBe("2026-11-03T00:00:00.000Z");
+    expect(iso(startOfNextDay(parseDateOnly("2026-12-31")))).toBe("2027-01-01T00:00:00.000Z");
+  });
+
+  it("excludes the day's own transactions (stored at 12:00 UTC)", () => {
+    const day = parseDateOnly("2026-11-02");
+    expect(day < startOfNextDay(day)).toBe(true);
+    expect(parseDateOnly("2026-11-03") >= startOfNextDay(day)).toBe(true);
   });
 });
