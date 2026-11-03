@@ -11,6 +11,10 @@ import { roundMoney } from "./money";
  *   - income: the average of non-fixed income, only for months with no
  *     income registered at all (avoids double counting a salary that was
  *     later registered as fixed).
+ *
+ * Balance (optional): starting from a known balance on `since`, each month's
+ * balance adds that month's result, ignoring transactions dated before
+ * `since` (they are already part of the known balance).
  */
 
 export interface ProjectionTransaction {
@@ -28,6 +32,14 @@ export interface ProjectionMonth {
   expense: { installments: number; fixed: number; variable: number; estimated: number };
   net: number;
   cumulative: number;
+  /** Projected balance at the end of the month; null without a known balance. */
+  balance: number | null;
+}
+
+export interface OpeningBalance {
+  /** Balance at the start of the first projected month (or on `since`, if later). */
+  amount: number;
+  since: Date;
 }
 
 export interface Projection {
@@ -57,13 +69,16 @@ export function buildProjection(
   transactions: ProjectionTransaction[],
   start: { month: number; year: number },
   monthCount: number,
-  includeEstimates: boolean
+  includeEstimates: boolean,
+  opening?: OpeningBalance
 ): Projection {
   const startIdx = monthIndex(start.year, start.month);
 
   const empty = () => ({
     income: { committed: 0, estimated: 0, variable: 0 },
     expense: { installments: 0, fixed: 0, variable: 0, estimated: 0 },
+    /** Signed total of transactions dated before `opening.since`. */
+    beforeSince: 0,
   });
   const buckets = new Map<number, ReturnType<typeof empty>>();
   for (let i = -PROJECTION_HISTORY_MONTHS; i < monthCount; i++) {
@@ -73,6 +88,9 @@ export function buildProjection(
   for (const t of transactions) {
     const bucket = buckets.get(monthIndex(t.date.getUTCFullYear(), t.date.getUTCMonth()));
     if (!bucket) continue;
+    if (opening && t.date < opening.since) {
+      bucket.beforeSince += t.type === "INCOME" ? t.amount : -t.amount;
+    }
     if (t.type === "INCOME") {
       bucket.income.committed += t.amount;
       if (!t.isFixed) bucket.income.variable += t.amount;
@@ -92,6 +110,7 @@ export function buildProjection(
   const variableIncome = roundMoney(historyIncome / PROJECTION_HISTORY_MONTHS);
 
   let cumulative = 0;
+  let balance = opening?.amount ?? 0;
   const months: ProjectionMonth[] = [];
 
   for (let i = 0; i < monthCount; i++) {
@@ -121,6 +140,7 @@ export function buildProjection(
         expense.estimated
     );
     cumulative = roundMoney(cumulative + net);
+    if (opening) balance = roundMoney(balance + net - b.beforeSince);
 
     months.push({
       month: idx % 12,
@@ -129,6 +149,7 @@ export function buildProjection(
       expense,
       net,
       cumulative,
+      balance: opening ? balance : null,
     });
   }
 

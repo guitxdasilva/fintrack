@@ -12,6 +12,7 @@ export const queryKeys = {
     (type ? ["categories", type] : ["categories"]) as readonly string[],
   cards: ["cards"] as const,
   goals: ["goals"] as const,
+  balance: ["balance"] as const,
   projection: (month: number, year: number, months: number, estimates: boolean) =>
     ["projection", month, year, months, estimates] as const,
 };
@@ -19,7 +20,7 @@ export const queryKeys = {
 /** Every query derived from transactions (lists, totals, invoices, budgets). */
 export function invalidateFinancialData(queryClient: QueryClient) {
   return Promise.all(
-    ["transactions", "dashboard", "budget", "invoice", "projection"].map((key) =>
+    ["transactions", "dashboard", "budget", "invoice", "projection", "balance"].map((key) =>
       queryClient.invalidateQueries({ queryKey: [key] })
     )
   );

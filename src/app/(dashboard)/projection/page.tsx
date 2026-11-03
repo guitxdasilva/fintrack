@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/common/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import { useProjection } from "@/modules/dashboard/hooks/useDashboard";
 import { ProjectionChart } from "@/modules/projection/components/ProjectionChart";
 import { ProjectionSummary } from "@/modules/projection/components/ProjectionSummary";
 import { ProjectionTable } from "@/modules/projection/components/ProjectionTable";
+import { hasBalance } from "@/modules/projection/lib/format";
 
 const MONTH_OPTIONS = [3, 6, 12];
 
@@ -117,14 +119,30 @@ export default function ProjectionPage() {
         </Card>
       ) : (
         <div className={cn("space-y-6 transition-opacity", isFetching && "opacity-60")}>
+          {!hasBalance(data.months) && (
+            <div className="flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <Wallet className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Informe seu saldo atual para ver <strong className="text-foreground">quanto você
+                  vai ter</strong> em cada mês, e não só o resultado do período.
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link href="/settings#saldo">Informar saldo</Link>
+              </Button>
+            </div>
+          )}
+
           <ProjectionSummary months={data.months} />
 
           <Card>
             <CardHeader>
               <CardTitle>Resultado mês a mês</CardTitle>
               <CardDescription>
-                Receitas menos despesas de cada mês, e o acumulado desde{" "}
-                {now.toLocaleDateString("pt-BR", { month: "long" })}
+                {hasBalance(data.months)
+                  ? "Receitas menos despesas de cada mês, e o saldo no fim de cada um"
+                  : `Receitas menos despesas de cada mês, e o acumulado desde ${now.toLocaleDateString("pt-BR", { month: "long" })}`}
               </CardDescription>
             </CardHeader>
             <CardContent>

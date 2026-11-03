@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { monthRange } from "@/lib/dates";
+import { balanceAt } from "@/lib/balance";
 import { PROJECTION_HISTORY_MONTHS, buildProjection } from "@/lib/projection";
 
 const ALLOWED_MONTHS = [3, 6, 12];
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Mês inválido" }, { status: 400 });
     }
 
+    const windowStart = monthRange(year, month).start;
     const from = monthRange(year, month - PROJECTION_HISTORY_MONTHS).start;
     const to = monthRange(year, month + monthCount - 1).end;
 
@@ -39,8 +41,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Informed before the window: moved to its start. Informed inside it: used
+    // as is, and the window's transactions dated before it are skipped.
+    const known = await balanceAt(session.user.id, windowStart);
+    const opening = known
+      ? { amount: known.amount, since: known.since > windowStart ? known.since : windowStart }
+      : undefined;
+
     return NextResponse.json({
-      data: buildProjection(transactions, { month, year }, monthCount, includeEstimates),
+      data: buildProjection(transactions, { month, year }, monthCount, includeEstimates, opening),
     });
   } catch {
     return NextResponse.json(

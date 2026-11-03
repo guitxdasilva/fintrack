@@ -3,7 +3,7 @@ import type { LucideIcon } from "lucide-react";
 import { Card, CardContent } from "@/common/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
 import type { ProjectionMonth } from "@/lib/projection";
-import { longMonth, shortMonth } from "../lib/format";
+import { hasBalance, lineValue, longMonth, shortMonth } from "../lib/format";
 
 function Tile({
   icon: Icon,
@@ -33,16 +33,21 @@ function Tile({
 export function ProjectionSummary({ months }: { months: ProjectionMonth[] }) {
   const last = months[months.length - 1];
   const worst = months.reduce((a, b) => (b.net < a.net ? b : a));
-  const negative = months.filter((m) => m.net < 0).length;
+  const withBalance = hasBalance(months);
+  const negative = months.filter((m) => (withBalance ? m.balance! < 0 : m.net < 0)).length;
   const installments = months.reduce((sum, m) => sum + m.expense.installments, 0);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <Tile
         icon={Wallet}
-        label="Acumulado no período"
-        value={formatCurrency(last.cumulative)}
-        hint={`Soma dos resultados até ${longMonth(last)}`}
+        label={withBalance ? `Saldo em ${shortMonth(last)}` : "Acumulado no período"}
+        value={formatCurrency(lineValue(last))}
+        hint={
+          withBalance
+            ? `Saldo projetado no fim de ${longMonth(last)}`
+            : `Soma dos resultados até ${longMonth(last)}`
+        }
       />
       <Tile
         icon={AlertTriangle}
@@ -52,9 +57,15 @@ export function ProjectionSummary({ months }: { months: ProjectionMonth[] }) {
       />
       <Tile
         icon={CalendarClock}
-        label="Meses no negativo"
+        label={withBalance ? "Meses com saldo negativo" : "Meses no negativo"}
         value={`${negative} de ${months.length}`}
-        hint={negative === 0 ? "Nenhum mês fecha no vermelho" : "Resultado mensal abaixo de zero"}
+        hint={
+          negative === 0
+            ? "Nenhum mês fecha no vermelho"
+            : withBalance
+              ? "Saldo abaixo de zero no fim do mês"
+              : "Resultado mensal abaixo de zero"
+        }
       />
       <Tile
         icon={Layers}

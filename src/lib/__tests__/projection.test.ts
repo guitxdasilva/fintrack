@@ -111,3 +111,46 @@ describe("buildProjection", () => {
     expect(months[0].net).toBe(0);
   });
 });
+
+describe("buildProjection with an opening balance", () => {
+  it("is null without a known balance", () => {
+    const { months } = buildProjection([], START, 1, false);
+    expect(months[0].balance).toBeNull();
+  });
+
+  it("adds each month's result to the opening balance", () => {
+    const { months } = buildProjection(
+      [tx(10, 2026, 500, "EXPENSE", "installments"), tx(11, 2026, 200, "INCOME", "fixed")],
+      START,
+      2,
+      false,
+      { amount: 1000, since: dateOnly(2026, 9, 1) }
+    );
+    expect(months.map((m) => m.balance)).toEqual([500, 700]);
+  });
+
+  it("ignores transactions dated before the balance date", () => {
+    const since = dateOnly(2026, 10, 15); // balance informed on 15/Nov
+    const { months } = buildProjection(
+      [
+        { ...tx(10, 2026, 300, "EXPENSE"), date: dateOnly(2026, 10, 5) }, // already in the balance
+        { ...tx(10, 2026, 100, "EXPENSE"), date: dateOnly(2026, 10, 20) },
+      ],
+      START,
+      1,
+      false,
+      { amount: 2000, since }
+    );
+    expect(months[0].net).toBe(-400); // the month's result still counts everything
+    expect(months[0].balance).toBe(1900);
+  });
+
+  it("includes estimates in the projected balance", () => {
+    const { months } = buildProjection(history, START, 1, true, {
+      amount: 0,
+      since: dateOnly(2026, 10, 1),
+    });
+    // estimated income 3000 - estimated variable spending 600
+    expect(months[0].balance).toBe(2400);
+  });
+});

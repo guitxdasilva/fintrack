@@ -16,6 +16,15 @@ export function longMonth(m: Pick<ProjectionMonth, "month" | "year">): string {
   return `${LONG[m.month]} ${m.year}`;
 }
 
+/** The line series: projected balance when known, otherwise the cumulative result. */
+export function lineValue(m: ProjectionMonth): number {
+  return m.balance ?? m.cumulative;
+}
+
+export function hasBalance(months: ProjectionMonth[]): boolean {
+  return months.length > 0 && months[0].balance !== null;
+}
+
 export function totalIncome(m: ProjectionMonth): number {
   return m.income.committed + m.income.estimated;
 }

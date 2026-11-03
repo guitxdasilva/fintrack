@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/common/components/ui/dialog";
+import { BalanceSettingsCard } from "@/modules/balance/components/BalanceSettingsCard";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").max(100, "Nome muito longo"),
@@ -272,6 +273,8 @@ export default function SettingsPage() {
           </CardContent>
         </form>
       </Card>
+
+      <BalanceSettingsCard />
 
       {/* Password Section */}
       <Card className="transition-all duration-200 hover:shadow-md">

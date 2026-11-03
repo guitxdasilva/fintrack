@@ -8,7 +8,7 @@ import {
 } from "@/common/components/ui/table";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { ProjectionMonth } from "@/lib/projection";
-import { shortMonth, totalIncome } from "../lib/format";
+import { hasBalance, lineValue, shortMonth, totalIncome } from "../lib/format";
 
 function Money({ value, estimated }: { value: number; estimated?: boolean }) {
   if (value === 0) return <span className="text-muted-foreground">—</span>;
@@ -22,6 +22,7 @@ function Money({ value, estimated }: { value: number; estimated?: boolean }) {
 
 /** Month-by-month breakdown (also the accessible view of the chart). */
 export function ProjectionTable({ months }: { months: ProjectionMonth[] }) {
+  const withBalance = hasBalance(months);
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -34,7 +35,7 @@ export function ProjectionTable({ months }: { months: ProjectionMonth[] }) {
             <TableHead className="text-right">Variáveis</TableHead>
             <TableHead className="text-right">Estimado</TableHead>
             <TableHead className="text-right">Resultado</TableHead>
-            <TableHead className="text-right">Acumulado</TableHead>
+            <TableHead className="text-right">{withBalance ? "Saldo" : "Acumulado"}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -61,8 +62,13 @@ export function ProjectionTable({ months }: { months: ProjectionMonth[] }) {
                   {formatCurrency(m.net)}
                 </span>
               </TableCell>
-              <TableCell className="text-right font-semibold tabular-nums">
-                {formatCurrency(m.cumulative)}
+              <TableCell
+                className={cn(
+                  "text-right font-semibold tabular-nums",
+                  withBalance && m.balance! < 0 && "text-red-600 dark:text-red-400"
+                )}
+              >
+                {formatCurrency(lineValue(m))}
               </TableCell>
             </TableRow>
           ))}

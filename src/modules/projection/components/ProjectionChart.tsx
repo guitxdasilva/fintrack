@@ -17,6 +17,8 @@ import { formatCurrency } from "@/lib/utils";
 import type { ProjectionMonth } from "@/lib/projection";
 import {
   PROJECTION_COLORS,
+  hasBalance,
+  lineValue,
   longMonth,
   shortMonth,
   totalExpense,
@@ -51,8 +53,10 @@ function ProjectionTooltip({ month }: { month: ProjectionMonth }) {
           <span className="font-semibold tabular-nums">{formatCurrency(month.net)}</span>
         </div>
         <div className="flex justify-between gap-6 text-xs">
-          <span className="text-muted-foreground">Acumulado</span>
-          <span className="font-semibold tabular-nums">{formatCurrency(month.cumulative)}</span>
+          <span className="text-muted-foreground">
+            {month.balance !== null ? "Saldo no fim do mês" : "Acumulado"}
+          </span>
+          <span className="font-semibold tabular-nums">{formatCurrency(lineValue(month))}</span>
         </div>
       </div>
     </div>
@@ -69,8 +73,11 @@ function compactCurrency(value: number) {
 }
 
 export function ProjectionChart({ months }: { months: ProjectionMonth[] }) {
+  const withBalance = hasBalance(months);
+  const lineLabel = withBalance ? "Saldo projetado" : "Acumulado no período";
   const data = months.map((m) => ({
     ...m,
+    line: lineValue(m),
     label: shortMonth(m),
     income: totalIncome(m),
     expense: totalExpense(m),
@@ -111,8 +118,8 @@ export function ProjectionChart({ months }: { months: ProjectionMonth[] }) {
               ))}
             </Bar>
             <Line
-              dataKey="cumulative"
-              name="Acumulado"
+              dataKey="line"
+              name={lineLabel}
               isAnimationActive={false}
               type="monotone"
               stroke={PROJECTION_COLORS.cumulative}
@@ -122,7 +129,7 @@ export function ProjectionChart({ months }: { months: ProjectionMonth[] }) {
             >
               {/* Direct label on the last point only, placed past the bar */}
               <LabelList
-                dataKey="cumulative"
+                dataKey="line"
                 content={({ x, y, value, index }) =>
                   index === lastIndex ? (
                     <text
@@ -152,7 +159,7 @@ export function ProjectionChart({ months }: { months: ProjectionMonth[] }) {
         </span>
         <span className="flex items-center gap-2">
           <span className="h-0.5 w-4 rounded" style={{ backgroundColor: PROJECTION_COLORS.cumulative }} />
-          Acumulado no período
+          {lineLabel}
         </span>
       </div>
     </div>

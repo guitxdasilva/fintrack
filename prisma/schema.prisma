@@ -14,6 +14,10 @@ model User {
   password      String
   image         String?
   hasCompletedTour Boolean @default(false)
+  /// Balance the user had on `initialBalanceDate` (calendar date, 12:00 UTC).
+  /// Transactions on or after that date move it; earlier ones are already in it.
+  initialBalance     Float     @default(0)
+  initialBalanceDate DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

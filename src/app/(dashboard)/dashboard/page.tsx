@@ -8,6 +8,7 @@ import { BudgetOverview } from "@/modules/dashboard/components/BudgetOverview";
 import { ExpenseChart } from "@/modules/dashboard/components/ExpenseChart";
 import { IncomeVsExpense } from "@/modules/dashboard/components/IncomeVsExpense";
 import { MonthTransactions } from "@/modules/dashboard/components/MonthTransactions";
+import { useBalance } from "@/modules/balance/hooks/useBalance";
 import { useDashboard } from "@/modules/dashboard/hooks/useDashboard";
 
 const MONTH_NAMES = [
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   }
 
   const { data, isLoading } = useDashboard(month, year);
+  const { data: realBalance } = useBalance();
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -102,6 +104,7 @@ export default function DashboardPage() {
         totalExpense={data?.totalExpense ?? 0}
         totalPaid={data?.totalPaid ?? 0}
         totalPending={data?.totalPending ?? 0}
+        currentBalance={realBalance?.currentBalance ?? null}
         isLoading={isLoading}
       />
 

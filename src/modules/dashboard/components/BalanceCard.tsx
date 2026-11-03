@@ -11,6 +11,8 @@ interface BalanceCardProps {
   totalExpense: number;
   totalPaid: number;
   totalPending: number;
+  /** Real balance today, when the user informed a starting balance. */
+  currentBalance?: number | null;
   isLoading?: boolean;
 }
 
@@ -20,8 +22,10 @@ export function BalanceCard({
   totalExpense,
   totalPaid,
   totalPending,
+  currentBalance,
   isLoading,
 }: BalanceCardProps) {
+  const hasRealBalance = currentBalance !== null && currentBalance !== undefined;
   if (isLoading) {
     return (
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-5">
@@ -42,14 +46,23 @@ export function BalanceCard({
   }
 
   const cards = [
-    {
-      title: "Saldo Atual",
-      value: balance,
-      icon: Wallet,
-      color: balance >= 0 ? "text-emerald-500" : "text-red-500",
-      iconColor: "text-indigo-500",
-      description: "Balanço do mês atual",
-    },
+    hasRealBalance
+      ? {
+          title: "Saldo Atual",
+          value: currentBalance,
+          icon: Wallet,
+          color: currentBalance >= 0 ? "text-emerald-500" : "text-red-500",
+          iconColor: "text-indigo-500",
+          description: `Hoje · resultado do mês: ${formatCurrency(balance)}`,
+        }
+      : {
+          title: "Resultado do Mês",
+          value: balance,
+          icon: Wallet,
+          color: balance >= 0 ? "text-emerald-500" : "text-red-500",
+          iconColor: "text-indigo-500",
+          description: "Receitas − despesas · informe seu saldo em Configurações",
+        },
     {
       title: "Receitas",
       value: totalIncome,
