@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const paid = searchParams.get("paid");
     const isFixed = searchParams.get("isFixed");
     const paymentType = searchParams.get("paymentType");
+    const nonCard = searchParams.get("nonCard") === "true";
 
     const where: Record<string, unknown> = {
       userId: session.user.id,
@@ -70,6 +71,9 @@ export async function GET(request: NextRequest) {
 
     if (paymentType && ["CASH", "PIX", "CARD", "TRANSFER", "BANK_SLIP"].includes(paymentType)) {
       where.paymentType = paymentType;
+    } else if (nonCard) {
+      // Not paid with a card (PIX, cash, transfer, bank slip or unspecified)
+      where.OR = [{ paymentType: null }, { paymentType: { not: "CARD" } }];
     }
 
     if (monthParam !== null && yearParam !== null) {

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { E2E_USER, withDb } from "./fixtures";
-import { expectToast, fillNewTransaction, transactionTable } from "./helpers";
+import { deleteFromMenu, expectToast, fillNewTransaction, statementRow } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/transactions");
@@ -15,20 +15,19 @@ test("creates, edits and deletes an expense", async ({ page }) => {
   await dialog.getByRole("button", { name: "Criar" }).click();
   await expectToast(page, "Transação criada com sucesso");
 
-  const table = transactionTable(page);
-  await expect(table.getByText("Mercado E2E")).toBeVisible();
-  await expect(table.getByText("R$ 123,45")).toBeVisible();
+  await expect(statementRow(page, "Mercado E2E")).toContainText("R$ 123,45");
+  await expect(statementRow(page, "Mercado E2E")).toContainText("Pendente");
 
-  await page.getByRole("button", { name: "Editar Mercado E2E" }).first().click();
+  await page.getByRole("button", { name: "Editar Mercado E2E" }).click();
   await page.getByRole("dialog").getByLabel("Descrição").fill("Mercado E2E editado");
   await page.getByRole("dialog").getByRole("button", { name: "Atualizar" }).click();
   await expectToast(page, "Transação atualizada com sucesso");
-  await expect(table.getByText("Mercado E2E editado")).toBeVisible();
+  await expect(statementRow(page, "Mercado E2E editado")).toBeVisible();
 
-  await page.getByRole("button", { name: "Excluir Mercado E2E editado" }).first().click();
+  await deleteFromMenu(page, "Mercado E2E editado");
   await page.getByRole("dialog").getByRole("button", { name: "Excluir" }).click();
   await expectToast(page, "Transação excluída com sucesso");
-  await expect(table.getByText("Mercado E2E editado")).toHaveCount(0);
+  await expect(statementRow(page, "Mercado E2E editado")).toHaveCount(0);
 });
 
 test("marks selected expenses as paid and back", async ({ page }) => {
@@ -42,16 +41,16 @@ test("marks selected expenses as paid and back", async ({ page }) => {
     await expectToast(page, "Transação criada com sucesso");
   }
 
-  const table = transactionTable(page);
   for (const description of ["Conta A E2E", "Conta B E2E"]) {
-    await table.getByRole("row").filter({ hasText: description }).getByTitle("Selecionar").click();
+    await statementRow(page, description).getByTitle("Selecionar").click();
   }
   await page.getByRole("button", { name: "Marcar Pago" }).click();
   await expectToast(page, "2 transação(ões) atualizada(s)");
+  await expect(statementRow(page, "Conta A E2E")).toContainText("Pago");
 
   // Selecting them again offers to unmark: both are paid now
   for (const description of ["Conta A E2E", "Conta B E2E"]) {
-    await table.getByRole("row").filter({ hasText: description }).getByTitle("Selecionar").click();
+    await statementRow(page, description).getByTitle("Selecionar").click();
   }
   await expect(page.getByRole("button", { name: "Desmarcar Pago" })).toBeVisible();
 });
@@ -68,7 +67,7 @@ test("edits and deletes an installment series", async ({ page }) => {
   await expectToast(page, "Despesa parcelada em 3x criada com sucesso");
 
   // Rename the whole series from the first installment
-  await page.getByRole("button", { name: "Editar Notebook E2E (1/3)" }).first().click();
+  await page.getByRole("button", { name: "Editar Notebook E2E (1/3)" }).click();
   const edit = page.getByRole("dialog");
   await edit.getByRole("radio", { name: "Todas" }).click();
   await edit.getByLabel("Descrição").fill("Laptop E2E (1/3)");
@@ -93,7 +92,7 @@ test("edits and deletes an installment series", async ({ page }) => {
   ]);
 
   // Delete the whole series
-  await page.getByRole("button", { name: "Excluir Laptop E2E (1/3)" }).first().click();
+  await deleteFromMenu(page, "Laptop E2E (1/3)");
   const confirm = page.getByRole("dialog");
   await confirm.getByRole("radio", { name: "Todas" }).click();
   await confirm.getByRole("button", { name: "Excluir" }).click();

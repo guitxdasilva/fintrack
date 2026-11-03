@@ -21,9 +21,15 @@ export async function fillNewTransaction(
   return dialog;
 }
 
-/** The desktop table (the mobile card list is also in the DOM, hidden). */
-export function transactionTable(page: Page) {
-  return page.locator("table");
+/** A statement line (in any tab) by its description. */
+export function statementRow(page: Page, description: string) {
+  return page.getByRole("listitem").filter({ hasText: description });
+}
+
+/** Deletes a transaction through its row's actions menu (confirm dialog opens). */
+export async function deleteFromMenu(page: Page, description: string) {
+  await page.getByRole("button", { name: `Ações de ${description}` }).click();
+  await page.getByRole("menuitem", { name: "Excluir" }).click();
 }
 
 export async function expectToast(page: Page, text: string | RegExp) {

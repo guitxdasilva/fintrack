@@ -68,7 +68,16 @@ interface TransactionFormProps {
   onOpenChange: (open: boolean) => void;
   transaction?: Transaction | null;
   defaultType?: TransactionType;
+  /** Prefills a new transaction from where it was opened (a card's invoice, fixed bills). */
+  defaults?: TransactionDefaults;
   onSuccess?: () => void;
+}
+
+export interface TransactionDefaults {
+  paymentType?: PaymentType;
+  cardId?: string;
+  cardType?: "CREDIT" | "DEBIT";
+  isFixed?: boolean;
 }
 
 function TransactionFormContent({
@@ -76,6 +85,7 @@ function TransactionFormContent({
   onOpenChange,
   transaction,
   defaultType = "EXPENSE",
+  defaults,
   onSuccess,
 }: TransactionFormProps) {
   const saveTransaction = useSaveTransaction();
@@ -85,15 +95,19 @@ function TransactionFormContent({
   const [amount, setAmount] = useState(transaction ? String(transaction.amount) : "");
   const [categoryId, setCategoryId] = useState(transaction?.categoryId ?? "");
   const [paymentType, setPaymentType] = useState<PaymentType | "">(
-    (transaction?.paymentType as PaymentType) || ""
+    transaction ? (transaction.paymentType as PaymentType) || "" : defaults?.paymentType ?? ""
   );
-  const [cardId, setCardId] = useState(transaction?.cardId || "");
+  const [cardId, setCardId] = useState(
+    transaction ? transaction.cardId || "" : defaults?.cardId ?? ""
+  );
   const [cardType, setCardType] = useState<"CREDIT" | "DEBIT" | "">(
-    (transaction?.cardType as "CREDIT" | "DEBIT") || ""
+    transaction ? (transaction.cardType as "CREDIT" | "DEBIT") || "" : defaults?.cardType ?? ""
   );
   const [isInstallment, setIsInstallment] = useState(false);
   const [installments, setInstallments] = useState("2");
-  const [isFixed, setIsFixed] = useState(transaction?.isFixed || false);
+  const [isFixed, setIsFixed] = useState(
+    transaction ? transaction.isFixed || false : defaults?.isFixed ?? false
+  );
   const [fixedMonths, setFixedMonths] = useState(DEFAULT_FIXED_MONTHS);
   const [date, setDate] = useState<Date>(() =>
     transaction
@@ -562,7 +576,7 @@ export function TransactionForm(props: TransactionFormProps) {
   const session = useOpenSession(props.open);
   return (
     <TransactionFormContent
-      key={`${session}-${props.transaction?.id ?? props.defaultType ?? "new"}`}
+      key={`${session}-${props.transaction?.id ?? props.defaultType ?? "new"}-${JSON.stringify(props.defaults ?? {})}`}
       {...props}
     />
   );
