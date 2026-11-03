@@ -7,6 +7,8 @@ export const E2E_USER = {
 };
 
 export const E2E_CARD = { name: "Cartão E2E", closingDay: 10 };
+/** Second card, without a closing day (invoice = calendar month). */
+export const E2E_CARD_B = { name: "Cartão B E2E" };
 
 export function e2eDatabaseUrl(): string {
   const url =

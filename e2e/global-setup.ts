@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { DEFAULT_CATEGORIES } from "../src/lib/default-categories";
-import { E2E_CARD, E2E_USER, withDb } from "./fixtures";
+import { E2E_CARD, E2E_CARD_B, E2E_USER, withDb } from "./fixtures";
 
 /** Wipes the local e2e database and creates the test user. */
 export default async function globalSetup() {
@@ -29,6 +29,10 @@ export default async function globalSetup() {
       `INSERT INTO "Card" (id, name, icon, "closingDayType", "closingDayValue", "userId")
        VALUES ($1, $2, '💳', 'FIXED', $3, $4)`,
       [randomUUID(), E2E_CARD.name, E2E_CARD.closingDay, userId]
+    );
+    await db.query(
+      `INSERT INTO "Card" (id, name, icon, "userId") VALUES ($1, $2, '💳', $3)`,
+      [randomUUID(), E2E_CARD_B.name, userId]
     );
   });
 }

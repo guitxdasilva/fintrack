@@ -29,6 +29,8 @@ interface StatementViewProps {
   /** "paid": the row icon marks as paid directly (bills checklist) instead of selecting. */
   iconAction?: "select" | "paid";
   hideCard?: boolean;
+  /** Tighter layout for narrow columns (cards side by side). */
+  compact?: boolean;
 }
 
 /**
@@ -42,6 +44,7 @@ export function StatementView({
   onEdit,
   iconAction = "select",
   hideCard,
+  compact = false,
 }: StatementViewProps) {
   const [deleteTarget, setDeleteTarget] = useState<Transaction | null>(null);
   const [deleteScope, setDeleteScope] = useState<SeriesScope>("this");
@@ -123,10 +126,10 @@ export function StatementView({
 
   return (
     <div>
-      <div className="space-y-5 p-2 sm:p-3">
+      <div className={compact ? "space-y-4 p-1.5" : "space-y-5 p-2 sm:p-3"}>
         {groups.map((g) => (
           <section key={g.key} aria-label={g.title}>
-            <header className="flex items-baseline justify-between px-2 pb-1 sm:px-3">
+            <header className={cn("flex items-baseline justify-between pb-1", compact ? "px-2" : "px-2 sm:px-3")}>
               <h3 className="text-sm font-semibold">{g.title}</h3>
               <span
                 className={cn(
@@ -153,6 +156,7 @@ export function StatementView({
                     setDeleteTarget(target);
                   }}
                   hideCard={hideCard}
+                  compact={compact}
                 />
               ))}
             </ul>

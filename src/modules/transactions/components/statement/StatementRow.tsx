@@ -25,6 +25,8 @@ interface StatementRowProps {
   onDelete: (t: Transaction) => void;
   /** Hide the card name (inside a card's own invoice). */
   hideCard?: boolean;
+  /** Tighter layout for narrow columns. */
+  compact?: boolean;
 }
 
 function details(t: Transaction, hideCard: boolean): string[] {
@@ -52,6 +54,7 @@ export function StatementRow({
   onTogglePaid,
   onDelete,
   hideCard = false,
+  compact = false,
 }: StatementRowProps) {
   const isExpense = t.type === "EXPENSE";
   const paidMark = isExpense && t.paid;
@@ -68,7 +71,8 @@ export function StatementRow({
   return (
     <li
       className={cn(
-        "group flex items-center gap-3 px-2 py-2.5 sm:px-3 rounded-lg transition-colors",
+        "group flex items-center rounded-lg transition-colors",
+        compact ? "gap-2 px-1.5 py-2" : "gap-3 px-2 py-2.5 sm:px-3",
         selected ? "bg-primary/5 ring-1 ring-primary/20" : "hover:bg-muted/50"
       )}
     >
@@ -79,7 +83,10 @@ export function StatementRow({
         aria-label={`${iconTitle}: ${t.description}`}
         aria-pressed={iconAction === "paid" ? !!t.paid : selected}
         disabled={iconAction === "paid" && !isExpense}
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-lg transition-colors disabled:cursor-default"
+        className={cn(
+          "relative flex shrink-0 items-center justify-center rounded-full transition-colors disabled:cursor-default",
+          compact ? "h-8 w-8 text-base" : "h-10 w-10 text-lg"
+        )}
         style={{ backgroundColor: `${t.category?.color ?? "#6366f1"}1f` }}
       >
         {selected ? (
@@ -96,7 +103,7 @@ export function StatementRow({
         type="button"
         onClick={() => onEdit(t)}
         aria-label={`Editar ${t.description}`}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className={cn("flex min-w-0 flex-1 items-center text-left", compact ? "gap-2" : "gap-3")}
       >
         <div className="min-w-0 flex-1">
           <p

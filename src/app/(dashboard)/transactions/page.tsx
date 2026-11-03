@@ -33,7 +33,7 @@ import { BulkDuplicateDialog } from "@/modules/transactions/components/BulkDupli
 import { ImportDialog } from "@/modules/transactions/components/ImportDialog";
 import type { FilterValues } from "@/modules/transactions/components/TransactionFilters";
 import { AllView, filterParams } from "@/modules/transactions/components/views/AllView";
-import { CardsView } from "@/modules/transactions/components/views/CardsView";
+import { ALL_CARDS, CardsView } from "@/modules/transactions/components/views/CardsView";
 import { FixedView } from "@/modules/transactions/components/views/FixedView";
 import { OthersView } from "@/modules/transactions/components/views/OthersView";
 import { RecurringSuggestions } from "@/modules/recurrence/components/RecurringSuggestions";
@@ -184,7 +184,7 @@ function TransactionsPageContent() {
           <CardsView
             month={month}
             cardId={cardParam}
-            onCardChange={(id) => setUrl({ card: id })}
+            onCardChange={(id) => setUrl({ card: id === ALL_CARDS ? null : id })}
             onEdit={openEdit}
             onNew={(defaults) => openNew("EXPENSE", defaults)}
           />
