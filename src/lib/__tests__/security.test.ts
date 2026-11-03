@@ -41,7 +41,7 @@ describe("getClientIp", () => {
 });
 
 describe("isProtectedPath", () => {
-  it.each(["/dashboard", "/transactions", "/cards", "/budget", "/settings", "/goals/x"])(
+  it.each(["/dashboard", "/transactions", "/cards", "/budget", "/projection", "/settings", "/goals/x"])(
     "%s is protected",
     (path) => expect(isProtectedPath(path)).toBe(true)
   );

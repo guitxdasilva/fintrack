@@ -10,6 +10,7 @@ import {
   Target,
   CreditCard,
   PiggyBank,
+  TrendingUp,
 } from "lucide-react";
 import {
   Sidebar as ShadcnSidebar,
@@ -54,6 +55,12 @@ const navItems = [
     url: "/budget",
     icon: PiggyBank,
     tourId: "nav-budget",
+  },
+  {
+    title: "Projeção",
+    url: "/projection",
+    icon: TrendingUp,
+    tourId: "nav-projection",
   },
   {
     title: "Metas",

@@ -8,6 +8,7 @@ export const PROTECTED_PREFIXES = [
   "/categories",
   "/cards",
   "/budget",
+  "/projection",
   "/goals",
   "/settings",
 ] as const;

@@ -67,6 +67,16 @@ const TOUR_STEPS: DriveStep[] = [
     },
   },
   {
+    element: "[data-tour='nav-projection']",
+    popover: {
+      title: "📈 Projeção",
+      description:
+        "Veja como devem ficar os próximos meses com parcelas, despesas e receitas fixas, mais uma estimativa dos gastos variáveis.",
+      side: "right",
+      align: "start",
+    },
+  },
+  {
     element: "[data-tour='nav-goals']",
     popover: {
       title: "🎯 Metas",
