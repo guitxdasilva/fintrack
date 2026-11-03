@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseDateOnly } from "../dates";
 import { sumMoney, roundMoney } from "../money";
-import { scheduleDate, splitInstallments } from "../transactions/schedule";
+import { monthKey, moveToMonth, scheduleDate, splitInstallments } from "../transactions/schedule";
 
 const day = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -57,5 +57,20 @@ describe("money helpers", () => {
   it("sumMoney sums in cents", () => {
     expect(sumMoney([0.1, 0.2, 0.3], (x) => x)).toBe(0.6);
     expect(sumMoney([], (x: number) => x)).toBe(0);
+  });
+});
+
+describe("moveToMonth", () => {
+  it("bills credit card charges on day 1 of the chosen month", () => {
+    expect(day(moveToMonth(parseDateOnly("2027-03-01"), "2027-02", true))).toBe("2027-02-01");
+  });
+
+  it("keeps the day for other transactions, clamped to the month", () => {
+    expect(day(moveToMonth(parseDateOnly("2026-01-31"), "2026-02", false))).toBe("2026-02-28");
+    expect(day(moveToMonth(parseDateOnly("2026-01-15"), "2026-04", false))).toBe("2026-04-15");
+  });
+
+  it("monthKey is the stored month", () => {
+    expect(monthKey(parseDateOnly("2027-02-01"))).toBe("2027-02");
   });
 });

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { getCreditCardMonthOffset } from "@/lib/invoice";
 import { firstOfMonthAfter, isDateOnlyString, parseDateOnly } from "@/lib/dates";
+import { moveToMonth } from "@/lib/transactions/schedule";
 import {
   SERIES_SCOPES,
   hasInstallmentSuffix,
@@ -24,6 +25,8 @@ const updateTransactionSchema = z.object({
   cardId: z.string().nullable().optional(),
   cardType: z.enum(["CREDIT", "DEBIT"]).nullable().optional(),
   isFixed: z.boolean().optional(),
+  /** Puts this transaction in another month ("yyyy-MM"), e.g. an installment in the wrong invoice. */
+  billingMonth: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Mês inválido").optional(),
   /** For installments/fixed series: which members to update. Dates only change with "this". */
   scope: z.enum(SERIES_SCOPES).optional().default("this"),
 });
@@ -89,14 +92,29 @@ export async function PUT(
     const effectiveCardType = result.data.cardType !== undefined ? result.data.cardType : existing.cardType;
     const effectiveCardId = result.data.cardId !== undefined ? result.data.cardId : existing.cardId;
 
-    if (result.data.date !== undefined && scope === "this") {
+    const closingCard =
+      effectiveCardType === "CREDIT" && effectiveCardId
+        ? await prisma.card.findFirst({
+            where: { id: effectiveCardId, userId: session.user.id },
+            select: { closingDayType: true, closingDayValue: true },
+          })
+        : null;
+    const creditBilled = !!(closingCard?.closingDayType && closingCard?.closingDayValue);
+
+    // The form always sends the date. Only recompute the billing month when the
+    // purchase date or the card actually changed: recomputing on every edit
+    // moved installments whenever the card's closing rule had changed since.
+    const shownDate = (existing.purchaseDate ?? existing.date).toISOString().slice(0, 10);
+    const dateChanged = result.data.date !== undefined && result.data.date !== shownDate;
+    const cardChanged =
+      (result.data.cardId !== undefined && result.data.cardId !== existing.cardId) ||
+      (result.data.cardType !== undefined && result.data.cardType !== existing.cardType);
+
+    if (result.data.date !== undefined && scope === "this" && (dateChanged || cardChanged)) {
       const newDate = parseDateOnly(result.data.date);
 
       if (effectiveCardType === "CREDIT" && effectiveCardId) {
-        const card = await prisma.card.findFirst({
-          where: { id: effectiveCardId, userId: session.user.id },
-          select: { closingDayType: true, closingDayValue: true },
-        });
+        const card = closingCard;
         if (card?.closingDayType && card?.closingDayValue) {
           data.purchaseDate = newDate;
           const offset = getCreditCardMonthOffset(newDate, card.closingDayType, card.closingDayValue);
@@ -111,6 +129,11 @@ export async function PUT(
         data.date = newDate;
         data.purchaseDate = null;
       }
+    }
+
+    if (result.data.billingMonth && scope === "this") {
+      const current = (data.date as Date | undefined) ?? existing.date;
+      data.date = moveToMonth(current, result.data.billingMonth, creditBilled);
     }
     if (result.data.categoryId !== undefined) {
       const category = await prisma.category.findFirst({

@@ -37,6 +37,7 @@ import {
 import { Calendar } from "@/common/components/ui/calendar";
 import { cn, formatCurrency } from "@/lib/utils";
 import { formatDateOnly } from "@/lib/dates";
+import { monthKey } from "@/lib/transactions/schedule";
 import type { Transaction, TransactionType, PaymentType } from "@/types";
 import { PAYMENT_TYPE_LABELS, PAYMENT_TYPE_ICONS, PAYMENT_TYPES } from "@/types";
 
@@ -53,6 +54,18 @@ const transactionSchema = z.object({
     .string()
     .min(1, "Selecione uma categoria"),
 });
+
+/** Months around the current invoice month ("yyyy-MM") to move a charge to. */
+function billingMonthOptions(current: string) {
+  const [year, month] = current.split("-").map(Number);
+  return Array.from({ length: 25 }, (_, i) => {
+    const d = new Date(year, month - 1 + i - 12, 1);
+    return {
+      value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: format(d, "MMMM 'de' yyyy", { locale: ptBR }).replace(/^./, (c) => c.toUpperCase()),
+    };
+  });
+}
 
 /** Fixed income/expenses are generated for this many months by default. */
 const DEFAULT_FIXED_MONTHS = "12";
@@ -115,6 +128,9 @@ function TransactionFormContent({
       : new Date()
   );
   const [scope, setScope] = useState<SeriesScope>("this");
+  // Invoice month of a credit charge, to fix an installment in the wrong month
+  const initialBillingMonth = transaction ? monthKey(new Date(transaction.date)) : "";
+  const [billingMonth, setBillingMonth] = useState(initialBillingMonth);
   const editingSeries = !!transaction && isSeries(transaction);
   const { data: categories = [], isError: categoriesError } = useCategories(type);
   const { data: cards = [] } = useCards();
@@ -167,6 +183,9 @@ function TransactionFormContent({
           ? { fixedMonths: parseInt(fixedMonths) }
           : {}),
         ...(editingSeries ? { scope } : {}),
+        ...(isEditing && scope === "this" && billingMonth !== initialBillingMonth
+          ? { billingMonth }
+          : {}),
       };
 
       const res = await saveTransaction.mutateAsync({
@@ -551,6 +570,27 @@ function TransactionFormContent({
               </p>
             )}
           </div>
+
+          {isEditing && paymentType === "CARD" && cardType === "CREDIT" && scope === "this" && (
+            <div className="space-y-2">
+              <Label>Mês da fatura</Label>
+              <Select value={billingMonth} onValueChange={setBillingMonth}>
+                <SelectTrigger className="w-full" aria-label="Mês da fatura">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {billingMonthOptions(initialBillingMonth).map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Use para corrigir uma parcela que caiu na fatura errada.
+              </p>
+            </div>
+          )}
           </div>
 
           <div className="flex gap-3 border-t bg-background px-6 py-4">

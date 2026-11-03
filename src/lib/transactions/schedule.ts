@@ -1,4 +1,4 @@
-import { addMonthsClamped, firstOfMonthAfter } from "../dates";
+import { addMonthsClamped, dateOnly, daysInMonth, firstOfMonthAfter } from "../dates";
 import { roundMoney } from "../money";
 
 /**
@@ -25,4 +25,20 @@ export function scheduleDate(
   return creditMonthOffset > 0
     ? firstOfMonthAfter(baseDate, index + creditMonthOffset)
     : addMonthsClamped(baseDate, index);
+}
+
+/** "yyyy-MM" of a stored calendar date. */
+export function monthKey(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/**
+ * Moves a transaction to another month ("yyyy-MM"), e.g. an installment that
+ * landed in the wrong invoice. Credit card charges are billed on day 1 of the
+ * invoice month; anything else keeps its day (clamped to the month's length).
+ */
+export function moveToMonth(current: Date, month: string, creditBilled: boolean): Date {
+  const [year, m] = month.split("-").map(Number);
+  const day = creditBilled ? 1 : Math.min(current.getUTCDate(), daysInMonth(year, m - 1));
+  return dateOnly(year, m - 1, day);
 }
