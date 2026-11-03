@@ -17,12 +17,10 @@ import { formatCurrency } from "@/lib/utils";
 import type { ProjectionMonth } from "@/lib/projection";
 import {
   PROJECTION_COLORS,
+  chartRows,
   hasBalance,
   lineValue,
   longMonth,
-  shortMonth,
-  totalExpense,
-  totalIncome,
 } from "../lib/format";
 
 function Row({ label, value, muted }: { label: string; value: number; muted?: boolean }) {
@@ -75,13 +73,7 @@ function compactCurrency(value: number) {
 export function ProjectionChart({ months }: { months: ProjectionMonth[] }) {
   const withBalance = hasBalance(months);
   const lineLabel = withBalance ? "Saldo projetado" : "Acumulado no período";
-  const data = months.map((m) => ({
-    ...m,
-    line: lineValue(m),
-    label: shortMonth(m),
-    income: totalIncome(m),
-    expense: totalExpense(m),
-  }));
+  const data = chartRows(months);
   const lastIndex = data.length - 1;
 
   return (

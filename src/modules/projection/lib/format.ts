@@ -29,9 +29,12 @@ export function totalIncome(m: ProjectionMonth): number {
   return m.income.committed + m.income.estimated;
 }
 
-export function totalExpense(m: ProjectionMonth): number {
-  const e = m.expense;
-  return e.installments + e.fixed + e.variable + e.estimated;
+/**
+ * Recharts rows: the month unchanged (the tooltip reads its breakdown)
+ * plus the line value and the axis label.
+ */
+export function chartRows(months: ProjectionMonth[]) {
+  return months.map((m) => ({ ...m, line: lineValue(m), label: shortMonth(m) }));
 }
 
 /** Validated pair (CVD-safe, light & dark): positive / negative result, cumulative line. */
