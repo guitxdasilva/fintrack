@@ -151,7 +151,7 @@ export function TransactionTable({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(t)}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(t)} aria-label={`Editar ${t.description}`}>
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
@@ -159,6 +159,7 @@ export function TransactionTable({
                     size="icon"
                     className="h-8 w-8 text-red-500 hover:text-red-600"
                     onClick={() => onDelete(t)}
+                    aria-label={`Excluir ${t.description}`}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

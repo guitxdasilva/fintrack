@@ -159,10 +159,26 @@ Acesse [http://localhost:3000](http://localhost:3000).
 | `npm test` | Roda os testes (Vitest) |
 | `npm run test:watch` | Testes em modo watch |
 | `npm run typecheck` | Checagem de tipos (tsc) |
+| `npm run test:e2e` | Testes E2E (Playwright) contra um banco local descartável |
 | `npm run lint` | ESLint |
 | `npx prisma studio` | Interface visual do banco de dados |
 | `npx prisma migrate dev` | Executar migrations |
 | `npx prisma db seed` | Popular banco com dados demo |
+
+## 🧪 Testes E2E
+
+Os testes de ponta a ponta rodam o build de produção contra um **banco local descartável** — o setup apaga tudo nele, e recusa qualquer host que não seja `localhost`.
+
+```bash
+# Postgres local para os testes (ou use E2E_DATABASE_URL para apontar outro banco local)
+createdb -h localhost -p 54329 -U postgres fintrack_e2e
+DATABASE_URL="postgresql://postgres@localhost:54329/fintrack_e2e" npx prisma migrate deploy
+
+npm run build
+npm run test:e2e
+```
+
+No CI, um serviço Postgres é criado a cada execução.
 
 ## 📄 Licença
 
