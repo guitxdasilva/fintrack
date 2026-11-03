@@ -28,6 +28,7 @@ model User {
   cards          Card[]
   passwordResets PasswordResetToken[]
   feedbacks      Feedback[]
+  recurrenceDismissals RecurrenceDismissal[]
 }
 
 model Account {
@@ -167,4 +168,18 @@ model Feedback {
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/// A recurring-transaction suggestion the user chose to ignore.
+model RecurrenceDismissal {
+  id        String          @id @default(cuid())
+  /// Normalized description (see lib/recurrence/detect.ts → recurrenceKey)
+  key       String
+  type      TransactionType
+  createdAt DateTime        @default(now())
+
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type, key])
 }

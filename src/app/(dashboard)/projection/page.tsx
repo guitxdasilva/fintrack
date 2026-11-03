@@ -20,6 +20,7 @@ import { ProjectionChart } from "@/modules/projection/components/ProjectionChart
 import { ProjectionSummary } from "@/modules/projection/components/ProjectionSummary";
 import { ProjectionTable } from "@/modules/projection/components/ProjectionTable";
 import { hasBalance } from "@/modules/projection/lib/format";
+import { RecurringSuggestions } from "@/modules/recurrence/components/RecurringSuggestions";
 
 const MONTH_OPTIONS = [3, 6, 12];
 
@@ -158,6 +159,8 @@ export default function ProjectionPage() {
               )}
             </CardContent>
           </Card>
+
+          <RecurringSuggestions variant="card" />
 
           <Card>
             <CardHeader>

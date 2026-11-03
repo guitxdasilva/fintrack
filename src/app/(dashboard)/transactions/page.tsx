@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/common/components/ui/dropdown-menu";
 import { useTransactions } from "@/modules/transactions/hooks/useTransactions";
+import { RecurringSuggestions } from "@/modules/recurrence/components/RecurringSuggestions";
 import type { Transaction } from "@/types";
 
 type ViewMode = "table" | "cards";
@@ -201,6 +202,8 @@ export default function TransactionsPage() {
           </TooltipProvider>
         </div>
       </div>
+
+      <RecurringSuggestions variant="banner" />
 
       <div className="rounded-lg border bg-card p-4 shadow-sm">
         <TransactionFilters onFilterChange={handleFilterChange} />

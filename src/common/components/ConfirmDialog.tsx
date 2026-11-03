@@ -15,12 +15,16 @@ interface ConfirmDialogProps {
   description: ReactNode;
   confirmLabel: string;
   loading?: boolean;
+  /** Label while `loading`. */
+  loadingLabel?: string;
+  /** "destructive" (default) for deletions, "default" for other confirmations. */
+  variant?: "destructive" | "default";
   onConfirm: () => void;
   /** Extra content between the description and the buttons. */
   children?: ReactNode;
 }
 
-/** Destructive confirmation ("Excluir ...?") with Cancel / Confirm buttons. */
+/** Confirmation dialog with Cancel / Confirm buttons (destructive by default). */
 export function ConfirmDialog({
   open,
   onOpenChange,
@@ -28,6 +32,8 @@ export function ConfirmDialog({
   description,
   confirmLabel,
   loading,
+  loadingLabel = "Excluindo...",
+  variant = "destructive",
   onConfirm,
   children,
 }: ConfirmDialogProps) {
@@ -48,8 +54,8 @@ export function ConfirmDialog({
           >
             Cancelar
           </Button>
-          <Button variant="destructive" className="flex-1" onClick={onConfirm} disabled={loading}>
-            {loading ? "Excluindo..." : confirmLabel}
+          <Button variant={variant} className="flex-1" onClick={onConfirm} disabled={loading}>
+            {loading ? loadingLabel : confirmLabel}
           </Button>
         </div>
       </DialogContent>
